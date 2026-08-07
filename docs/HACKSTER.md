@@ -16,6 +16,11 @@ streams RSSI from two switchable antenna paths, and turns the comparison into a
 number you can defend: **+12.5 dB** for a hand-made microstrip patch over the
 module's chip antenna.
 
+And then it does the part that actually matters — it *keeps the record*: which
+antenna, built to which geometry, measured under which procedure, and what that
+run concluded. The scope is the instrument. The experiment library is the
+product, and it is designed to outlive this project.
+
 ---
 
 ## Why this project
@@ -49,11 +54,28 @@ not merely possible.
 |---|---|
 | Board | M5Tab5, ESP32-C6-MINI-1U |
 | RF switch | GPIO-controlled, selects chip antenna or external MMCX port |
-| Antenna under test | Project Platypus patch, Rev 7.13 |
-| Antenna type | 2.4 GHz microstrip patch, quarter-wave transformer variant |
+| Antenna under test | Project Platypus patch, Rev 7.13.1 |
+| Antenna type | 2.4 GHz microstrip patch, three matching variants on one panel |
 | Reference | ESP32-C6-MINI-1U on-module chip antenna |
-| Measured result | **+12.5 dB** over the chip antenna |
+| Measured result | **+12.5 dB** over the chip antenna (Design C) |
 | Link | USB serial, streaming RSSI; firmware also logs CSV |
+
+### Three designs, one fab run
+
+The panel carries all three textbook answers to matching a patch, side by side on
+the same substrate — which is what makes them comparable at all:
+
+| Design | Matching | Geometry | Predicted Rin |
+|---|---|---|---|
+| **A** | Inset feed, calculated | y₀ = 9.81 mm, slot 6.3 mm | 50 Ω (matched) |
+| **B** | Inset feed, deliberate mismatch | y₀ = 7.50 mm, slot 6.3 mm | 97 Ω (control) |
+| **C** | Quarter-wave transformer | Z₁ = 100 Ω, w = 0.709 mm, ℓ = 17.98 mm | 50 Ω via λ/4 |
+
+Design B is the one worth pausing on. It is *deliberately* mismatched — the
+control that tests whether the matching model does what the maths claims. A rig
+that cannot show B underperforming is not measuring anything, so B being worse is
+a passing result for the instrument. The software records it as a control, not as
+a failed design.
 
 The board runs oscilloscope-style antenna test firmware written for this project.
 The GPIO-controlled RF switch is what makes the whole thing a *comparison* rather
@@ -196,6 +218,34 @@ The alternative design — an abstract `openProducer()` method on the interface 
 would have dragged jSerialComm and file I/O into the domain model, which is
 precisely what keeps `core` headless and testable.
 
+The same pattern carries the lab library. `FeedDesign` is sealed over
+`InsetFeed`, `QuarterWaveTransformer` and `DirectFeed`, so an antenna's matching
+structure is *typed data* rather than a string in a notes field:
+
+```java
+case InsetFeed(double y0, double slot, double rin, boolean matched) ->
+        "Inset feed y0=%.2fmm slot=%.1fmm Rin=%.0f ohm (%s)".formatted(...);
+case QuarterWaveTransformer(double z1, double w, double l) ->
+        "Quarter-wave transformer Z1=%.0f ohm w=%.3fmm L=%.1fmm".formatted(...);
+```
+
+Record deconstruction in the case labels means each variant names exactly the
+geometry it cares about, and adding a fourth matching method — a proximity-
+coupled feed, say — breaks every switch that needs updating.
+
+### A JSON codec, to keep the dependency budget at one
+
+The library had to be durable and diffable, which means a boring, well-known
+format. The obvious answer is Jackson. But the project's dependency budget is
+deliberately one runtime library, and the schema is small and entirely ours — so
+`core/json` is a hand-written codec whose writer is an exhaustive switch over a
+sealed `Json` value model.
+
+It paid for itself immediately. Its own round-trip test caught that
+`Map.copyOf()` returns an **unordered** map, which was silently scrambling member
+order — every save would have produced a fresh git diff whether or not anything
+changed, in the one file whose whole purpose is a readable history.
+
 ---
 
 ## Engineering decisions worth defending
@@ -207,6 +257,59 @@ mean. Antenna Lab reports the dB-domain mean, because that is what "12.5 dB
 better" conventionally means and what antenna datasheets quote — the figure stays
 directly comparable to how the original bench result was expressed. The choice is
 documented in the code rather than left implicit.
+
+### Statistical significance is not physical meaning
+
+The most interesting bug in this project was one the *hardware documentation*
+found in my software.
+
+Project Platypus's own `TEST_PROCEDURE.md` notes that the M5Tab5 reports WiFi
+RSSI quantised to 1 dBm, and that differences under 2 dBm are within measurement
+noise. My confidence grading knew nothing about that. It graded on statistics
+alone — and averaging drives error bars down without limit, so with enough
+samples *any* small bias becomes "significant". A 1.2 dB delta over 3000 samples
+has a 95% interval nowhere near zero. My code would have printed it in confident
+green.
+
+That is precisely the failure mode this project exists to prevent, committed by
+the tool built to prevent it.
+
+The fix is a `BELOW_RESOLUTION` grade that runs *after* the statistics claim
+significance — because that ordering is the point. If the error bars already
+overlap zero, "not distinguishable" is the more useful message. The physical
+floor only matters in the narrow case where the maths says yes and the instrument
+could never have seen it.
+
+```java
+if (ratio < 1.0) return Confidence.WEAK;              // statistics say no
+if (Math.abs(delta) < MEANINGFUL_DELTA_FLOOR_DB)      // hardware says no
+    return Confidence.BELOW_RESOLUTION;
+return ratio >= 2.0 ? Confidence.STRONG : Confidence.MODERATE;
+```
+
+### What this bench honestly cannot do
+
+The Platypus README is blunt about something an enthusiastic demo would gloss
+over: **return loss is not signal loss.** Even Design B's deliberate 97 Ω feed
+point costs well under 2 dB of delivered power — inside the noise floor above. So
+an over-the-air RSSI comparison cannot rank A against B against C. The +12.5 dB
+comes from directivity and from escaping the host enclosure, not from matching
+finesse; separating the three matching approaches needs an S11 sweep on a VNA.
+
+I could have shipped a three-way comparison view and let it imply otherwise. The
+limitation is written into the code instead, because a bench that quietly invites
+an unsupported conclusion is worse than no bench.
+
+### The published headline is not like-for-like, and the software says so
+
+The +12.5 dB is quoted as −40.5 dBm chip **average** against −28.0 dBm patch
+**best**. An average against a best case is not a comparison, and it is the most
+attackable number in this project.
+
+The library therefore ships that experiment `PLANNED`, with an empty conclusion.
+The measurement predates the software; until a run is captured under a recorded
+procedure with both figures computed the same way, the application has no basis
+for asserting it. Reproducing it properly is the point of the exercise.
 
 ### The delta never travels without its error bars
 
