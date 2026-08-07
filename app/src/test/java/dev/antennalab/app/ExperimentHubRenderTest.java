@@ -4,10 +4,8 @@ import dev.antennalab.app.view.ExperimentHubView;
 import dev.antennalab.core.lab.Experiment;
 import dev.antennalab.core.lab.LabLibrary;
 import dev.antennalab.core.lab.PlatypusCatalog;
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.image.WritableImage;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -17,14 +15,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Builds the hub against a real seeded library and renders it off-screen.
