@@ -49,28 +49,9 @@ class ScopeViewRenderTest {
 
     @BeforeAll
     static void startToolkit() {
-        try {
-            CountDownLatch started = new CountDownLatch(1);
-            Platform.startup(started::countDown);
-            toolkitAvailable = started.await(30, TimeUnit.SECONDS);
-            // Nothing is ever shown, so without this the toolkit would shut itself
-            // down after the first snapshot and later tests would fail oddly.
-            Platform.setImplicitExit(false);
-        } catch (IllegalStateException alreadyRunning) {
-            toolkitAvailable = true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            toolkitAvailable = false;
-        } catch (UnsupportedOperationException | Error headless) {
-            toolkitAvailable = false;
-        }
-    }
-
-    @AfterAll
-    static void stopToolkit() {
-        if (toolkitAvailable) {
-            Platform.exit();
-        }
+        // Shared, start-once toolkit. Do NOT call Platform.exit() here -- see
+        // FxTestToolkit for why that breaks every other FX test class in the JVM.
+        toolkitAvailable = FxTestToolkit.ensureStarted();
     }
 
     /** A paired capture: both paths, external offset above chip, gently noisy. */
@@ -90,35 +71,19 @@ class ScopeViewRenderTest {
 
     /** Lay the scope out at a fixed size, push a window through it, and snapshot. */
     private static WritableImage render(List<RssiSample> samples) throws Exception {
-        AtomicReference<WritableImage> image = new AtomicReference<>();
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        CountDownLatch done = new CountDownLatch(1);
+        return FxTestToolkit.onFxThread(() -> {
+            ScopeView scope = new ScopeView();
+            // A Scene is needed for layoutChildren to run, which is what sizes the
+            // Canvas -- without it the canvas stays 0x0 and draws nothing.
+            new Scene(scope, WIDTH, HEIGHT);
+            scope.resize(WIDTH, HEIGHT);
+            scope.applyCss();
+            scope.layout();
 
-        Platform.runLater(() -> {
-            try {
-                ScopeView scope = new ScopeView();
-                // A Scene is needed for layoutChildren to run, which is what sizes
-                // the Canvas -- without it the canvas stays 0x0 and draws nothing.
-                new Scene(scope, WIDTH, HEIGHT);
-                scope.resize(WIDTH, HEIGHT);
-                scope.applyCss();
-                scope.layout();
+            scope.setWindow(samples);
 
-                scope.setWindow(samples);
-
-                image.set(scope.snapshot(null, null));
-            } catch (Throwable t) {
-                failure.set(t);
-            } finally {
-                done.countDown();
-            }
+            return scope.snapshot(null, null);
         });
-
-        assertTrue(done.await(30, TimeUnit.SECONDS), "render did not complete");
-        if (failure.get() != null) {
-            throw new AssertionError("rendering threw", failure.get());
-        }
-        return image.get();
     }
 
     private static boolean near(Color actual, Color expected, double tolerance) {

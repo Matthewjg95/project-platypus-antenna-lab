@@ -4,11 +4,15 @@ import dev.antennalab.core.domain.AntennaPath;
 import dev.antennalab.core.domain.RssiSample;
 import dev.antennalab.core.domain.Source;
 import dev.antennalab.core.domain.SyntheticSource;
+import dev.antennalab.core.lab.Experiment;
+import dev.antennalab.core.lab.LabLibrary;
+import dev.antennalab.core.lab.PlatypusCatalog;
 import dev.antennalab.core.pipeline.CaptureListener;
 import dev.antennalab.core.pipeline.CapturePipeline;
 import dev.antennalab.core.stats.AntennaDelta;
 import dev.antennalab.core.stats.TraceStats;
 import dev.antennalab.app.view.DeltaCard;
+import dev.antennalab.app.view.ExperimentHubView;
 import dev.antennalab.app.view.ScopeView;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -17,6 +21,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
@@ -56,15 +62,49 @@ public final class AntennaLabApp extends Application {
     private CapturePipeline pipeline;
     private int frameCounter;
 
+    private LabLibrary library;
+    private ExperimentHubView hub;
+    private TabPane tabs;
+    private Tab scopeTab;
+
+    /** Experiment the next capture will be recorded against, if any. */
+    private Experiment activeExperiment;
+
     @Override
     public void start(Stage stage) {
-        BorderPane root = new BorderPane();
-        root.setTop(buildToolBar());
-        root.setCenter(scope);
-        root.setRight(buildSidePanel());
-        root.setBottom(buildStatusBar());
+        BorderPane scopePane = new BorderPane();
+        scopePane.setTop(buildToolBar());
+        scopePane.setCenter(scope);
+        scopePane.setRight(buildSidePanel());
+        scopePane.setBottom(buildStatusBar());
 
         setRunningState(false);
+
+        // The library is opened once at startup and shared. A first run gets the
+        // Project Platypus hardware seeded so the hub is not an empty shell.
+        library = LabLibrary.openOrCreate(LabLibrary.defaultRoot());
+        if (library.duts().isEmpty() && library.experiments().isEmpty()) {
+            PlatypusCatalog.seed(library);
+            library.put(PlatypusCatalog.headlineExperiment(java.time.Instant.now()));
+            library.save();
+        }
+        hub = new ExperimentHubView(library);
+        // Selecting "capture a run" from the hub switches to the scope, so the two
+        // halves of the app are one workflow rather than two apps in a window.
+        hub.setOnCaptureRequested(experiment -> {
+            activeExperiment = experiment;
+            tabs.getSelectionModel().select(scopeTab);
+            sourceStatus.setText("Ready to capture for: " + experiment.title());
+        });
+
+        scopeTab = new Tab("Scope", scopePane);
+        scopeTab.setClosable(false);
+        Tab hubTab = new Tab("Experiments", hub);
+        hubTab.setClosable(false);
+        tabs = new TabPane(scopeTab, hubTab);
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
+        BorderPane root = new BorderPane(tabs);
 
         Scene scene = new Scene(root, 1180, 720);
         var css = AntennaLabApp.class.getResource("/dev/antennalab/app/instrument.css");
@@ -165,8 +205,40 @@ public final class AntennaLabApp extends Application {
     private void stopCapture() {
         if (pipeline != null) {
             pipeline.stop();
+            recordRunAgainstExperiment();
         }
         setRunningState(false);
+    }
+
+    /**
+     * Attach the finished capture to the experiment it was started for.
+     *
+     * <p>This is the join that makes the hub a manager rather than a viewer: a
+     * capture that is not linked to a question is the thing this whole model
+     * exists to stop producing.
+     *
+     * <p>A run with no samples is deliberately not recorded. An experiment listing
+     * runs that contain nothing would overstate how much evidence it has, which is
+     * the one direction the record must never err in.
+     */
+    private void recordRunAgainstExperiment() {
+        if (activeExperiment == null || pipeline == null) {
+            return;
+        }
+        int captured = pipeline.recordedSamples().size();
+        if (captured == 0) {
+            sourceStatus.setText("Nothing captured; no run recorded");
+            return;
+        }
+        String runId = "run-" + java.time.Instant.now().toString().replaceAll("[:.]", "-");
+        library.experiment(activeExperiment.id()).ifPresent(current -> {
+            Experiment updated = current.withRun(runId, java.time.Instant.now());
+            library.put(updated);
+            library.save();
+            activeExperiment = updated;
+            hub.refresh();
+        });
+        sourceStatus.setText("Recorded %,d samples as %s".formatted(captured, runId));
     }
 
     private void setRunningState(boolean running) {
