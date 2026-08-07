@@ -27,14 +27,14 @@ public sealed interface FeedDesign {
      * @param insetY0Mm            inset depth from the patch edge.
      * @param slotWidthMm          width of the gap either side of the feed line.
      * @param inputImpedanceOhms   design input impedance at the feed point.
-     * @param intendedlyMatched    true for a design targeting 50 ohm, false for a
+     * @param intentionallyMatched    true for a design targeting 50 ohm, false for a
      *                             deliberate mismatch kept as a control.
      */
     record InsetFeed(
             double insetY0Mm,
             double slotWidthMm,
             double inputImpedanceOhms,
-            boolean intendedlyMatched) implements FeedDesign {
+            boolean intentionallyMatched) implements FeedDesign {
 
         public InsetFeed {
             requirePositive(insetY0Mm, "insetY0Mm");
@@ -46,7 +46,7 @@ public sealed interface FeedDesign {
         public String summary() {
             return "Inset feed y0=%.2fmm slot=%.1fmm Rin=%.0f ohm (%s)".formatted(
                     insetY0Mm, slotWidthMm, inputImpedanceOhms,
-                    intendedlyMatched ? "matched" : "deliberate mismatch");
+                    intentionallyMatched ? "matched" : "deliberate mismatch");
         }
     }
 
@@ -122,7 +122,7 @@ public sealed interface FeedDesign {
                     .put("insetY0Mm", y0)
                     .put("slotWidthMm", slot)
                     .put("inputImpedanceOhms", rin)
-                    .put("intendedlyMatched", matched)
+                    .put("intentionallyMatched", matched)
                     .build();
             case QuarterWaveTransformer(double z1, double w, double l) -> Json.object()
                     .put("type", "quarterWave")
@@ -145,7 +145,7 @@ public sealed interface FeedDesign {
                     o.num("insetY0Mm"),
                     o.num("slotWidthMm"),
                     o.num("inputImpedanceOhms"),
-                    o.get("intendedlyMatched")
+                    o.get("intentionallyMatched")
                             .map(v -> v instanceof Json.Bool b && b.value())
                             .orElse(true));
             case "quarterWave" -> new QuarterWaveTransformer(

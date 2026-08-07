@@ -95,7 +95,7 @@ class LabLibraryTest {
 
         // B exists to underperform. If a reload quietly flipped this to "matched"
         // the control would look like a failed design instead of a working one.
-        assertFalse(feed.intendedlyMatched());
+        assertFalse(feed.intentionallyMatched());
         assertEquals(97.0, feed.inputImpedanceOhms(), 1e-9);
     }
 
