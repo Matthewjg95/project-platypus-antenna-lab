@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# jpackage output
+/dist/
+/app/build/jpackage/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Local captures that are not part of the committed test fixtures.
+# Real captures used by parser tests DO belong in core/src/test/resources/captures.
+/captures-scratch/
+*.local.csv

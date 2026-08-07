@@ -1,0 +1,162 @@
+/*
+ * Antenna Lab "instrument" theme.
+ *
+ * Aiming for bench equipment, not a business app: near-black chassis, a single
+ * accent per channel, monospaced readouts so digits do not jitter as they change
+ * width, and no drop shadows or rounded pill buttons.
+ */
+
+.root {
+    -fx-background-color: #0B0F14;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+
+    /* Channel colours, matched to ScopeView's trace palette. */
+    -chip-colour: #FFB01F;
+    -external-colour: #22D3EE;
+    -chassis: #10161D;
+    -chassis-line: #22303D;
+    -text-primary: #C9D8E4;
+    -text-muted: #7C93A6;
+}
+
+.tool-bar {
+    -fx-background-color: -chassis;
+    -fx-border-color: transparent transparent -chassis-line transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 10 8 10;
+    -fx-spacing: 6;
+}
+
+.button, .toggle-button {
+    -fx-background-color: #1A242E;
+    -fx-background-radius: 2;
+    -fx-border-color: -chassis-line;
+    -fx-border-radius: 2;
+    -fx-text-fill: -text-primary;
+    -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+}
+
+.button:hover, .toggle-button:hover {
+    -fx-background-color: #24313D;
+}
+
+.button:disabled, .toggle-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #3A2A12;
+    -fx-border-color: -chip-colour;
+    -fx-text-fill: -chip-colour;
+}
+
+.button.primary {
+    -fx-background-color: #12333A;
+    -fx-border-color: -external-colour;
+    -fx-text-fill: -external-colour;
+}
+
+.button.primary:hover {
+    -fx-background-color: #17434C;
+}
+
+.combo-box {
+    -fx-background-color: #1A242E;
+    -fx-border-color: -chassis-line;
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+}
+
+.combo-box .list-cell, .combo-box .text {
+    -fx-text-fill: -text-primary;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1A242E;
+    -fx-border-color: -chassis-line;
+}
+
+.combo-box-popup .list-cell:filled:selected,
+.combo-box-popup .list-cell:filled:hover {
+    -fx-background-color: #24313D;
+}
+
+.side-panel {
+    -fx-background-color: -chassis;
+    -fx-border-color: -chassis-line transparent transparent transparent;
+    -fx-border-width: 0 0 0 1;
+    -fx-min-width: 330;
+    -fx-pref-width: 330;
+}
+
+.delta-card {
+    -fx-background-color: #141C24;
+    -fx-border-color: -chassis-line;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.card-caption {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.delta-headline {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-muted;
+}
+
+/* Confidence drives the headline colour: a weak result must not look strong. */
+.delta-headline.confidence-strong { -fx-text-fill: #4ADE80; }
+.delta-headline.confidence-moderate { -fx-text-fill: #FFB01F; }
+.delta-headline.confidence-weak { -fx-text-fill: #F87171; }
+.delta-headline.confidence-insufficient { -fx-text-fill: #7C93A6; }
+
+.delta-qualification {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 11px;
+}
+
+.trace-readout {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -text-primary;
+}
+
+.status-bar {
+    -fx-background-color: -chassis;
+    -fx-border-color: -chassis-line transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 5 10 5 10;
+    -fx-spacing: 14;
+}
+
+.status-text {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -text-muted;
+}
+
+.status-text.live {
+    -fx-text-fill: #4ADE80;
+}
+
+.status-text.simulated {
+    -fx-text-fill: #FFB01F;
+}
+
+.label {
+    -fx-text-fill: -text-primary;
+}
+
+.section-title {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 0 4 0;
+}

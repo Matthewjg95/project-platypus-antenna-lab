@@ -1,0 +1,30 @@
+# Antenna Lab dependency catalogue.
+#
+# Every version here is pinned exactly -- the contest submission has to be
+# reproducible from a clean checkout, so no dynamic ranges and no "latest.release".
+#
+# Verified against Maven Central / Adoptium on 2026-08-06:
+#   JDK 26      -> GA 2026-03-17 (non-LTS). Temurin 26.0.2+10 is the current patch.
+#   JavaFX      -> 26.0.2, the patch line that tracks JDK 26.
+#   jSerialComm -> 2.11.4.
+#   JUnit       -> 6.1.2 (Jupiter programming model, requires Java 17+).
+
+[versions]
+# Kept in sync with the Gradle toolchain declaration in build.gradle.kts.
+java = "26"
+javafx = "26.0.2"
+jserialcomm = "2.11.4"
+junit = "6.1.2"
+
+[libraries]
+javafx-base = { module = "org.openjfx:javafx-base", version.ref = "javafx" }
+javafx-graphics = { module = "org.openjfx:javafx-graphics", version.ref = "javafx" }
+javafx-controls = { module = "org.openjfx:javafx-controls", version.ref = "javafx" }
+
+jserialcomm = { module = "com.fazecast:jSerialComm", version.ref = "jserialcomm" }
+
+# Versions for the two below come from the BOM above, so they are declared
+# without one -- that is the supported catalogue form for BOM-managed modules.
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

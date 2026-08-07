@@ -1,0 +1,15 @@
+# Normalise line endings so the repo stays clean across Windows and CI.
+* text=auto eol=lf
+
+# gradlew.bat must keep CRLF or cmd.exe mis-parses it.
+*.bat text eol=crlf
+
+# Never touch binaries.
+*.jar binary
+*.png binary
+*.jpg binary
+*.zip binary
+
+# Real capture fixtures are committed verbatim -- the parser tests depend on
+# their exact bytes, including whatever line endings the firmware emits.
+core/src/test/resources/captures/** -text
