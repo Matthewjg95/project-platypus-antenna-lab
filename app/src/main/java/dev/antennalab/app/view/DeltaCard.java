@@ -15,6 +15,14 @@ import javafx.scene.layout.VBox;
  */
 public final class DeltaCard extends VBox {
 
+    /** Every confidence style class, cleared before the current one is applied. */
+    private static final java.util.List<String> CONFIDENCE_CLASSES = java.util.List.of(
+            "confidence-strong",
+            "confidence-moderate",
+            "confidence-weak",
+            "confidence-below-resolution",
+            "confidence-insufficient");
+
     private final Label headline = new Label("--.- dB");
     private final Label qualification = new Label("No data captured yet");
     private final Label chipLine = new Label();
@@ -48,12 +56,12 @@ public final class DeltaCard extends VBox {
 
         // Style keyed off the confidence grade, so a weak result cannot be shown
         // in the same confident green as a strong one.
-        headline.getStyleClass().removeAll(
-                "confidence-strong", "confidence-moderate", "confidence-weak", "confidence-insufficient");
+        headline.getStyleClass().removeAll(CONFIDENCE_CLASSES);
         headline.getStyleClass().add(switch (delta.confidence()) {
             case STRONG -> "confidence-strong";
             case MODERATE -> "confidence-moderate";
             case WEAK -> "confidence-weak";
+            case BELOW_RESOLUTION -> "confidence-below-resolution";
             case INSUFFICIENT -> "confidence-insufficient";
         });
 
@@ -67,8 +75,7 @@ public final class DeltaCard extends VBox {
         qualification.setText("No data captured yet");
         chipLine.setText("");
         externalLine.setText("");
-        headline.getStyleClass().removeAll(
-                "confidence-strong", "confidence-moderate", "confidence-weak", "confidence-insufficient");
+        headline.getStyleClass().removeAll(CONFIDENCE_CLASSES);
     }
 
     private static String format(String label, TraceStats s) {

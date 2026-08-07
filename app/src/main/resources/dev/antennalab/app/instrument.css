@@ -115,6 +115,9 @@
 .delta-headline.confidence-strong { -fx-text-fill: #4ADE80; }
 .delta-headline.confidence-moderate { -fx-text-fill: #FFB01F; }
 .delta-headline.confidence-weak { -fx-text-fill: #F87171; }
+/* Below the 2 dB instrument floor: greyed like INSUFFICIENT rather than coloured,
+   because the honest reading is "this rig cannot tell", not "this is bad". */
+.delta-headline.confidence-below-resolution { -fx-text-fill: #7C93A6; }
 .delta-headline.confidence-insufficient { -fx-text-fill: #7C93A6; }
 
 .delta-qualification {

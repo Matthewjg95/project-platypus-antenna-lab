@@ -35,9 +35,37 @@ public record AntennaDelta(
         MODERATE,
         /** Error bars overlap zero: the traces are not distinguishable. */
         WEAK,
+        /**
+         * Statistically separable, but smaller than the instrument can honestly
+         * resolve.
+         *
+         * <p>This grade exists because statistical significance and physical
+         * meaning are different things, and enough samples will make any bias
+         * "significant". The ESP32 reports RSSI quantised to 1 dBm, and Project
+         * Platypus's own test procedure states that differences under 2 dBm are
+         * within measurement noise. A 1.5 dB delta over ten thousand samples has
+         * tight error bars and still tells you nothing about the antenna.
+         */
+        BELOW_RESOLUTION,
         /** Too few samples, or the two traces are too unevenly sampled, to say. */
         INSUFFICIENT
     }
+
+    /**
+     * RSSI quantisation step of the ESP32 WiFi stack, in dB.
+     *
+     * <p>Readings arrive as whole dBm, so no amount of averaging turns this into
+     * a continuous measurement -- it bounds what the instrument can see.
+     */
+    public static final double INSTRUMENT_RESOLUTION_DB = 1.0;
+
+    /**
+     * Smallest difference this rig will call real, in dB.
+     *
+     * <p>From TEST_PROCEDURE.md: "Differences &lt; 2 dBm are within measurement
+     * noise and should not be interpreted as real gain changes."
+     */
+    public static final double MEANINGFUL_DELTA_FLOOR_DB = 2.0;
 
     /** Below this many samples on either path, no delta is worth grading. */
     public static final int MIN_SAMPLES_PER_PATH = 30;
@@ -98,16 +126,43 @@ public record AntennaDelta(
         if (margin <= 0) {
             // Zero spread on both traces. Physically implausible for real RSSI;
             // usually means a stuck reading or a mis-parsed constant column.
-            return delta == 0 ? Confidence.WEAK : Confidence.MODERATE;
+            return Math.abs(delta) < MEANINGFUL_DELTA_FLOOR_DB
+                    ? Confidence.BELOW_RESOLUTION
+                    : Confidence.MODERATE;
         }
         double ratio = Math.abs(delta) / margin;
-        if (ratio >= 2.0) {
-            return Confidence.STRONG;
+
+        // Statistics first: if the error bars already overlap zero, "not
+        // distinguishable" is the more useful thing to say, and the physical floor
+        // adds nothing.
+        if (ratio < 1.0) {
+            return Confidence.WEAK;
         }
-        if (ratio >= 1.0) {
-            return Confidence.MODERATE;
+
+        // The statistics claim a real difference. Now ask whether the hardware
+        // could have seen it. Averaging drives the error bars down without limit,
+        // so a large enough sample makes any small bias look decisive -- but the
+        // ESP32 quantises RSSI to 1 dBm and the project's own procedure says
+        // sub-2 dB differences are noise. Reporting STRONG here would be the
+        // software lending false authority to a number the instrument cannot
+        // support. This check exists precisely for the case where statistical
+        // significance and physical meaning disagree.
+        if (Math.abs(delta) < MEANINGFUL_DELTA_FLOOR_DB) {
+            return Confidence.BELOW_RESOLUTION;
         }
-        return Confidence.WEAK;
+
+        return ratio >= 2.0 ? Confidence.STRONG : Confidence.MODERATE;
+    }
+
+    /**
+     * Whether the difference is big enough for this instrument to mean anything.
+     *
+     * <p>Separate from {@link #isSignificant()} on purpose: that asks whether the
+     * statistics can distinguish the traces, this asks whether the hardware can.
+     * A result needs both.
+     */
+    public boolean isAboveInstrumentResolution() {
+        return Math.abs(deltaDb) >= MEANINGFUL_DELTA_FLOOR_DB;
     }
 
     /** True when the 95% interval excludes zero, i.e. the difference is real. */
@@ -142,6 +197,10 @@ public record AntennaDelta(
                     .formatted(lowerBoundDb(), upperBoundDb(), chip.count(), external.count());
             case WEAK -> "Not distinguishable from zero: 95%% CI %+.1f to %+.1f dB (n=%d/%d)"
                     .formatted(lowerBoundDb(), upperBoundDb(), chip.count(), external.count());
+            case BELOW_RESOLUTION -> ("Below instrument resolution: %.1f dB is inside the %.0f dB "
+                    + "noise floor of a 1 dBm RSSI reading, whatever the sample count says (n=%d/%d)")
+                    .formatted(Math.abs(deltaDb), MEANINGFUL_DELTA_FLOOR_DB,
+                            chip.count(), external.count());
             case INSUFFICIENT -> "Insufficient or unbalanced data (n=%d/%d); capture more before quoting this"
                     .formatted(chip.count(), external.count());
         };

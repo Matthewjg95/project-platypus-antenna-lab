@@ -105,6 +105,38 @@ class AntennaDeltaTest {
     }
 
     @Test
+    @DisplayName("a statistically solid but sub-2 dB difference is graded BELOW_RESOLUTION")
+    void smallDifferenceIsBelowInstrumentResolution() {
+        // 1.2 dB apart, 3000 samples each, tight spread. The statistics are
+        // emphatic -- the 95% interval is nowhere near zero -- but the ESP32
+        // reports RSSI in whole dBm and the project's procedure says under 2 dBm
+        // is noise. This is the exact case where significance and meaning diverge,
+        // and the software must not launder one into the other.
+        TraceStats chip = TraceStats.ofValues(series(51, -62.0, 2.0, 3000));
+        TraceStats external = TraceStats.ofValues(series(52, -60.8, 2.0, 3000));
+
+        AntennaDelta d = AntennaDelta.of(chip, external);
+
+        assertTrue(d.isSignificant(), "statistics alone should call this separable");
+        assertFalse(d.isAboveInstrumentResolution());
+        assertEquals(AntennaDelta.Confidence.BELOW_RESOLUTION, d.confidence());
+        assertTrue(d.qualification().contains("Below instrument resolution"));
+    }
+
+    @Test
+    @DisplayName("the 12.5 dB headline is comfortably above the instrument floor")
+    void headlineMagnitudeIsResolvable() {
+        TraceStats chip = TraceStats.ofValues(series(61, -40.5, 2.2, 400));
+        TraceStats external = TraceStats.ofValues(series(62, -28.0, 2.2, 400));
+
+        AntennaDelta d = AntennaDelta.of(chip, external);
+
+        assertTrue(d.isAboveInstrumentResolution());
+        assertEquals(AntennaDelta.Confidence.STRONG, d.confidence());
+        assertEquals(12.5, d.deltaDb(), 0.6);
+    }
+
+    @Test
     @DisplayName("the confidence interval brackets the delta and is reported in the qualification")
     void confidenceIntervalIsReported() {
         TraceStats chip = TraceStats.ofValues(series(41, -62.0, 2.2, 200));
