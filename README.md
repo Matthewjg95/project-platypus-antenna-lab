@@ -91,6 +91,54 @@ whose whole point is exercising modern Java it is the right side of the trade.
 
 ---
 
+## Packaging for people who don't have a JDK
+
+Both outputs bundle their own Java runtime. That is **not optional here**: the
+code is compiled with `--enable-preview`, so its class files are locked to JDK 26
+and refuse to load on any other JDK. Shipping the runtime is what makes that
+constraint invisible to whoever installs it. Both launchers also carry
+`--enable-preview` and `--enable-native-access=ALL-UNNAMED` baked in via
+`--java-options`; without them the app dies on startup with an
+`UnsupportedClassVersionError` that explains nothing.
+
+### Portable app folder — no extra tooling
+
+```bash
+./gradlew :app:packageImage
+```
+
+Produces `app/build/dist/Antenna Lab/` (~135 MB) containing `Antenna Lab.exe`
+and a bundled runtime. Zip the folder, send it to someone, they unzip and
+double-click. **No Java installation required on their machine.**
+
+### Windows installer (.msi)
+
+Requires the WiX Toolset — `jpackage` shells out to it and cannot build Windows
+installers without it. Install **3.14**, not the 7.x that winget also offers:
+jpackage drives WiX through `candle.exe`/`light.exe`, and WiX 4+ restructured
+that command-line interface entirely.
+
+```bash
+winget install --id WiXToolset.WiXToolset --version 3.14.1.8722 --exact
+```
+
+```bash
+./gradlew :app:packageInstaller
+```
+
+Produces an `.msi` in `app/build/dist/` with a Start-menu entry, a desktop
+shortcut, and an install-directory chooser.
+
+### Where the library lives
+
+The app keeps its experiment library in `~/AntennaLab/library` — three JSON
+files, shared by every install on the machine and independent of where the app
+itself is installed. Uninstalling does not remove it. Copy that directory to
+move a lab record between machines, or keep it in git next to the KiCad project
+it describes.
+
+---
+
 ## Project layout
 
 ```

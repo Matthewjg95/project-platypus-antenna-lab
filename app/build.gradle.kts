@@ -67,3 +67,104 @@ application {
 tasks.withType<Test>().configureEach {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
+
+// ---------------------------------------------------------------- packaging
+//
+// Producing something a person can install without a JDK, a clone, or Gradle.
+//
+// Two outputs, because they have different prerequisites:
+//
+//   :app:packageImage      a self-contained folder with "Antenna Lab.exe".
+//                          Needs nothing but the JDK. Zip it and it runs on a
+//                          machine with no Java at all.
+//   :app:packageInstaller  a real .msi. Needs the WiX Toolset 3.x installed,
+//                          which jpackage shells out to.
+//
+// Both bundle their own Java runtime. That is not optional here: this app is
+// compiled with --enable-preview, so its class files are locked to JDK 26 and
+// refuse to load on any other JDK. Shipping the runtime is what makes that
+// invisible to whoever installs it.
+
+version = "0.1.0"
+
+val appName = "Antenna Lab"
+val vendor = "Project Platypus"
+
+val isWindows = System.getProperty("os.name").lowercase().contains("win")
+
+/** jpackage from the same toolchain that compiled the code, not whatever is on PATH. */
+val jpackageTool: Provider<String> = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(libs.versions.java.get().toInt())
+}.map {
+    it.metadata.installationPath.file("bin/jpackage" + if (isWindows) ".exe" else "").asFile.absolutePath
+}
+
+/**
+ * Gather every runtime jar into one flat directory.
+ *
+ * jpackage's --input takes a directory and puts all of it on the app classpath,
+ * so this has to contain the application jar and its dependencies and nothing
+ * else. `installDist` already produces exactly that in build/install/app/lib.
+ */
+val jpackageInput = tasks.register<Sync>("jpackageInput") {
+    dependsOn(tasks.named("installDist"))
+    from(layout.buildDirectory.dir("install/app/lib"))
+    into(layout.buildDirectory.dir("jpackage-input"))
+}
+
+/** Flags the packaged launcher must carry, matching how `run` starts the app. */
+val packagedJvmArgs = listOf("--enable-preview", "--enable-native-access=ALL-UNNAMED")
+
+/**
+ * The application jar's filename, taken from the jar task rather than written
+ * out by hand -- it embeds the project version, so hardcoding "app.jar" breaks
+ * the moment the version changes.
+ */
+val mainJarName: Provider<String> = tasks.jar.flatMap { it.archiveFileName }
+
+fun Exec.commonJpackageArgs(type: String) {
+    dependsOn(jpackageInput)
+    val dest = layout.buildDirectory.dir("dist").get().asFile
+    val input = layout.buildDirectory.dir("jpackage-input").get().asFile
+
+    doFirst {
+        dest.mkdirs()
+        commandLine(
+            buildList {
+                add(jpackageTool.get())
+                addAll(listOf("--type", type))
+                addAll(listOf("--name", appName))
+                addAll(listOf("--app-version", project.version.toString()))
+                addAll(listOf("--vendor", vendor))
+                addAll(listOf("--description", "RF experiment manager and antenna test bench"))
+                addAll(listOf("--input", input.absolutePath))
+                addAll(listOf("--dest", dest.absolutePath))
+                addAll(listOf("--main-jar", mainJarName.get()))
+                addAll(listOf("--main-class", "dev.antennalab.app.Launcher"))
+                packagedJvmArgs.forEach { addAll(listOf("--java-options", it)) }
+                if (type != "app-image" && isWindows) {
+                    // A Start-menu entry and a desktop shortcut, and let the user
+                    // choose the install directory rather than forcing Program Files.
+                    addAll(listOf("--win-menu", "--win-shortcut", "--win-dir-chooser"))
+                    addAll(listOf("--win-menu-group", vendor))
+                }
+            }
+        )
+    }
+}
+
+tasks.register<Exec>("packageImage") {
+    group = "distribution"
+    description = "Self-contained app folder with a native launcher. No WiX needed."
+    commonJpackageArgs("app-image")
+    doLast {
+        val out = layout.buildDirectory.dir("dist/$appName").get().asFile
+        logger.lifecycle("App image: ${out.absolutePath}")
+    }
+}
+
+tasks.register<Exec>("packageInstaller") {
+    group = "distribution"
+    description = "Native installer (.msi on Windows). Requires the WiX Toolset 3.x."
+    commonJpackageArgs(if (isWindows) "msi" else "app-image")
+}
