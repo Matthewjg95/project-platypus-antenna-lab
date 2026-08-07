@@ -47,8 +47,23 @@ dependencies {
 
 application {
     mainClass = "dev.antennalab.app.Launcher"
-    // --enable-preview is added to every JavaExec by the root build, but the
-    // `run` task also needs it recorded here so the jpackage launcher and the
-    // start scripts inherit the same flag.
-    applicationDefaultJvmArgs = listOf("--enable-preview")
+    applicationDefaultJvmArgs = listOf(
+        // --enable-preview is added to every JavaExec by the root build, but the
+        // `run` task also needs it recorded here so the jpackage launcher and the
+        // start scripts inherit the same flag.
+        "--enable-preview",
+        // JavaFX loads its native libraries through System::load, which JDK 24+
+        // treats as a restricted method. Today that is a console warning; the JDK
+        // has stated it will become a hard failure in a future release. Granting
+        // it explicitly silences the warning now and is the forward-compatible
+        // form -- ALL-UNNAMED because we run JavaFX from the classpath.
+        "--enable-native-access=ALL-UNNAMED",
+    )
+}
+
+// The same flags have to reach the test JVM, which does not inherit
+// applicationDefaultJvmArgs -- ScopeViewRenderTest starts a real JavaFX toolkit
+// and would otherwise print the identical native-access warning.
+tasks.withType<Test>().configureEach {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
