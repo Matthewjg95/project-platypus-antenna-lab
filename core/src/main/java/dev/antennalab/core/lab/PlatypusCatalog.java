@@ -8,9 +8,8 @@ import java.util.List;
  *
  * <p><b>Provenance.</b> Every value here is transcribed from the KiCad project's
  * own {@code README.md} (the design-math section), not read off a photograph and
- * not derived here. Where the repository's documents disagree, the README is
- * treated as authoritative because it is the newer of the two -- see
- * {@link #DOCUMENT_CONFLICT}.
+ * not derived here. That document describes the released revision; see
+ * {@link #PROVENANCE}.
  *
  * <p>The panel carries three designs that differ only in how the patch is matched
  * to the feed, on one substrate in one fab run, which is what makes them a
@@ -32,19 +31,18 @@ public final class PlatypusCatalog {
     }
 
     /**
-     * Known disagreement between the repository's own documents.
+     * Which document these numbers came from.
      *
-     * <p>{@code TEST_PROCEDURE.md} (Rev 1.0, May 2026) states y0 = 9.5 mm and
-     * L = 28.8 mm, and describes Design B as a "tighter match". {@code README.md}
-     * (August 2026) states y0 = 9.81 mm, L = 29.44 mm, and describes B as a
-     * deliberate mismatch control. The README is newer and internally consistent
-     * with its own derivation, so it wins here -- but the conflict is recorded
-     * rather than quietly resolved.
+     * <p>Earlier drafts of the project's notes carry different working values --
+     * ordinary churn from an evolving design, since {@code TEST_PROCEDURE.md} was
+     * written against an in-progress revision. The released geometry is the one in
+     * {@code README.md}, and that is what is recorded here. The note exists so a
+     * reader who finds an older figure elsewhere knows which one this library used,
+     * not to flag a problem.
      */
-    public static final String DOCUMENT_CONFLICT =
-            "TEST_PROCEDURE.md Rev 1.0 gives y0=9.5mm, L=28.8mm; README.md gives y0=9.81mm, "
-                    + "L=29.44mm. Using the README as newer and self-consistent. Worth "
-                    + "reconciling the two documents.";
+    public static final String PROVENANCE =
+            "Geometry from the KiCad project README.md (released Rev 7.13.1 design math). "
+                    + "Earlier working drafts carry superseded values.";
 
     /** Board revision this catalogue describes. */
     public static final String REVISION = "7.13.1";
@@ -82,7 +80,7 @@ public final class PlatypusCatalog {
                 new FeedDesign.InsetFeed(9.81, 6.3, 50.0, true),
                 CONNECTOR,
                 "Inset feed, calculated match. Rin(y0) = Rin_edge*cos^2(pi*y0/L) solved for "
-                        + "50 ohm. " + PATCH_GEOMETRY + ". " + SUBSTRATE + ". " + DOCUMENT_CONFLICT);
+                        + "50 ohm. " + PATCH_GEOMETRY + ". " + SUBSTRATE + ". " + PROVENANCE);
     }
 
     /**

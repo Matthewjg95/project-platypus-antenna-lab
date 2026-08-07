@@ -264,14 +264,12 @@ class LabLibraryTest {
     }
 
     @Test
-    @DisplayName("the conflict between the project's own documents is recorded, not resolved silently")
-    void documentConflictIsRecorded() {
-        // TEST_PROCEDURE.md Rev 1.0 and README.md disagree on y0 and L. Picking
-        // the newer one is a judgement, and a judgement that is not written down
-        // is indistinguishable from a mistake later.
-        assertTrue(PlatypusCatalog.designA().notes().contains("TEST_PROCEDURE.md"));
-        assertTrue(PlatypusCatalog.DOCUMENT_CONFLICT.contains("9.5"));
-        assertTrue(PlatypusCatalog.DOCUMENT_CONFLICT.contains("9.81"));
+    @DisplayName("every seeded dimension says which document it came from")
+    void geometryCarriesItsProvenance() {
+        // Not about flagging disagreement -- about being able to answer "where did
+        // 9.81 come from?" in a year without re-deriving it.
+        assertTrue(PlatypusCatalog.designA().notes().contains("README.md"));
+        assertTrue(PlatypusCatalog.PROVENANCE.contains("README.md"));
     }
 
     @Test

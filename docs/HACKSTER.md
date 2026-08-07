@@ -300,6 +300,20 @@ I could have shipped a three-way comparison view and let it imply otherwise. The
 limitation is written into the code instead, because a bench that quietly invites
 an unsupported conclusion is worse than no bench.
 
+### Every dimension records where it came from
+
+The catalogue's numbers are transcribed from the KiCad project's `README.md`, and
+each one says so. This is not bookkeeping for its own sake: an evolving design
+leaves older working figures scattered through earlier notes, and the question
+that actually gets asked a year later is "where did 9.81 come from?" — not
+"is this right?". Storing the answer next to the value is the cheapest possible
+insurance against re-deriving it.
+
+It also caught three real transcription errors. Values I had read off a
+silkscreen photograph — a 3.3 mm slot, an 18.0 mm transformer, a `-001`
+connector — were wrong against the design document (6.3 mm, 17.98 mm, `-801`).
+Photographs are evidence of what a board *looks like*, not of what it *is*.
+
 ### The published headline is not like-for-like, and the software says so
 
 The +12.5 dB is quoted as −40.5 dBm chip **average** against −28.0 dBm patch
