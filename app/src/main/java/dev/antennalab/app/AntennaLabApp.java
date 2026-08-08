@@ -2,6 +2,7 @@ package dev.antennalab.app;
 
 import dev.antennalab.core.domain.AntennaPath;
 import dev.antennalab.core.domain.RssiSample;
+import dev.antennalab.core.domain.Session;
 import dev.antennalab.core.domain.Source;
 import dev.antennalab.core.domain.SyntheticSource;
 import dev.antennalab.core.lab.Experiment;
@@ -58,6 +59,10 @@ public final class AntennaLabApp extends Application {
     private final ToggleButton pauseButton = new ToggleButton("Pause");
     private final Button markerButton = new Button("Marker");
     private final Button clearButton = new Button("Clear");
+    private final Button exportButton = new Button("Export report…");
+
+    /** The last completed capture, exportable until the next one starts. */
+    private Session lastSession;
 
     private CapturePipeline pipeline;
     private int frameCounter;
@@ -158,6 +163,9 @@ public final class AntennaLabApp extends Application {
         Label sourceValue = new Label("Synthetic (no hardware)");
         sourceValue.getStyleClass().add("status-text");
 
+        exportButton.setOnAction(e -> exportReport());
+        exportButton.setDisable(true);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
@@ -167,7 +175,50 @@ public final class AntennaLabApp extends Application {
                 startButton, stopButton, pauseButton,
                 new Separator(),
                 markerButton, clearButton,
+                new Separator(),
+                exportButton,
                 spacer);
+    }
+
+    /**
+     * Write the last capture as a self-contained HTML report.
+     *
+     * <p>Report generation is a {@code core} call with no UI dependency; the app
+     * merely chooses the file. The write happens on a virtual thread because a
+     * large session can serialise tens of thousands of samples to SVG, and the
+     * one unforgivable UI sin in bench software is freezing the scope.
+     */
+    private void exportReport() {
+        Session session = lastSession;
+        if (session == null) {
+            return;
+        }
+        var chooser = new javafx.stage.FileChooser();
+        chooser.setTitle("Export report");
+        chooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("HTML report", "*.html"));
+        chooser.setInitialFileName("antenna-lab-report.html");
+        java.io.File target = chooser.showSaveDialog(scope.getScene().getWindow());
+        if (target == null) {
+            return;
+        }
+        exportButton.setDisable(true);
+        Thread.ofVirtual().name("report-export").start(() -> {
+            try {
+                String html = dev.antennalab.core.report.HtmlReport.render(session);
+                java.nio.file.Files.writeString(target.toPath(), html,
+                        java.nio.charset.StandardCharsets.UTF_8);
+                Platform.runLater(() -> {
+                    sourceStatus.setText("Report written: " + target.getName());
+                    exportButton.setDisable(false);
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    sourceStatus.setText("Report failed: " + ex.getMessage());
+                    exportButton.setDisable(false);
+                });
+            }
+        });
     }
 
     private VBox buildSidePanel() {
@@ -213,9 +264,24 @@ public final class AntennaLabApp extends Application {
     private void stopCapture() {
         if (pipeline != null) {
             pipeline.stop();
+            captureSession();
             recordRunAgainstExperiment();
         }
         setRunningState(false);
+    }
+
+    /** Freeze the finished capture into a Session so it can be exported. */
+    private void captureSession() {
+        if (pipeline == null || pipeline.recordedSamples().isEmpty()) {
+            return;
+        }
+        var meta = new dev.antennalab.core.domain.SessionMetadata(
+                activeExperiment != null ? activeExperiment.title() : "Ad-hoc capture",
+                0.0, "", dev.antennalab.core.domain.SessionMetadata.CHANNEL_UNKNOWN,
+                activeExperiment != null ? String.join(", ", activeExperiment.dutIds()) : "",
+                "", java.time.Instant.now());
+        lastSession = Session.of(pipeline.source(), meta, pipeline.recordedSamples());
+        exportButton.setDisable(false);
     }
 
     /**

@@ -87,8 +87,9 @@
     -fx-background-color: -chassis;
     -fx-border-color: -chassis-line transparent transparent transparent;
     -fx-border-width: 0 0 0 1;
-    -fx-min-width: 330;
-    -fx-pref-width: 330;
+    /* Wide enough for a full monospace statistics row without truncation. */
+    -fx-min-width: 360;
+    -fx-pref-width: 360;
 }
 
 .delta-card {

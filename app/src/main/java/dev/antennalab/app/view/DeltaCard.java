@@ -78,8 +78,17 @@ public final class DeltaCard extends VBox {
         headline.getStyleClass().removeAll(CONFIDENCE_CLASSES);
     }
 
+    /**
+     * Two lines per trace rather than one.
+     *
+     * <p>A single row of six statistics does not fit the panel, and JavaFX
+     * silently truncates it with an ellipsis -- so p95, standard deviation and
+     * the sample count vanished off the right edge. Losing n is the worst of
+     * those: it is the number that says whether the headline above is worth
+     * anything.
+     */
     private static String format(String label, TraceStats s) {
-        return "%s  mean %.1f  med %.1f  p95 %.1f  sd %.2f  n=%d"
+        return "%s   mean %7.1f   med %7.1f%n         p95 %7.1f    sd %6.2f   n=%d"
                 .formatted(label, s.meanDbm(), s.medianDbm(), s.p95Dbm(), s.stdDevDb(), s.count());
     }
 }
