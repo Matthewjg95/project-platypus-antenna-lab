@@ -112,6 +112,14 @@ public final class AntennaLabApp extends Application {
             scene.getStylesheets().add(css.toExternalForm());
         }
 
+        // The window icon is separate from the packaged launcher's icon: jpackage
+        // sets the taskbar/Explorer icon on the exe, but the running JavaFX stage
+        // has its own, and without this the window shows the generic Java one.
+        var iconStream = AntennaLabApp.class.getResourceAsStream("/dev/antennalab/app/antenna-lab-256.png");
+        if (iconStream != null) {
+            stage.getIcons().add(new javafx.scene.image.Image(iconStream));
+        }
+
         stage.setTitle("Antenna Lab - RF test bench");
         stage.setScene(scene);
         stage.setMinWidth(900);
