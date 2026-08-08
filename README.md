@@ -101,33 +101,47 @@ constraint invisible to whoever installs it. Both launchers also carry
 `--java-options`; without them the app dies on startup with an
 `UnsupportedClassVersionError` that explains nothing.
 
-### Portable app folder — no extra tooling
+### Recommended: a zip anyone can run
 
 ```bash
-./gradlew :app:packageImage
+./gradlew :app:packageZip
 ```
 
-Produces `app/build/dist/Antenna Lab/` (~135 MB) containing `Antenna Lab.exe`
-and a bundled runtime. Zip the folder, send it to someone, they unzip and
-double-click. **No Java installation required on their machine.**
+Produces `app/build/dist/AntennaLab-0.1.0-windows-x64.zip` — **55.7 MB
+compressed, 135 MB unpacked**. The recipient unzips it and double-clicks
+`Antenna Lab.exe`. No Java, no installer, no administrator rights at any point.
 
-### Windows installer (.msi)
+`:app:packageImage` alone produces the same folder unzipped, if you want to run
+it locally without the archive step.
 
-Requires the WiX Toolset — `jpackage` shells out to it and cannot build Windows
-installers without it. Install **3.14**, not the 7.x that winget also offers:
-jpackage drives WiX through `candle.exe`/`light.exe`, and WiX 4+ restructured
-that command-line interface entirely.
+### Windows installer (.msi) — usually not worth it
+
+Requires the WiX Toolset, which `jpackage` shells out to. Note the real cost
+before starting: WiX 3.x itself depends on the .NET Framework 3.5 Windows
+feature, and both it and the WiX install need an **elevated** shell.
+
+```bash
+DISM /Online /Enable-Feature /FeatureName:NetFx3 /All
+```
 
 ```bash
 winget install --id WiXToolset.WiXToolset --version 3.14.1.8722 --exact
 ```
 
+Install **3.14**, not the 7.x winget also offers: jpackage drives WiX through
+`candle.exe`/`light.exe`, and WiX 4+ restructured that CLI entirely.
+
 ```bash
 ./gradlew :app:packageInstaller
 ```
 
-Produces an `.msi` in `app/build/dist/` with a Start-menu entry, a desktop
-shortcut, and an install-directory chooser.
+**Why the zip is usually the better answer.** The `.msi` costs .NET 3.5, WiX and
+admin rights to build; it then costs the *recipient* admin rights to install,
+and an unsigned installer trips SmartScreen's unknown-publisher warning — which
+looks worse to someone evaluating the project than a plain zip does. What it
+buys is Start-menu integration and an uninstaller. If you do want a polished
+installer for a product listing, get a code-signing certificate first: an
+unsigned `.msi` is arguably worse than none.
 
 ### Where the library lives
 

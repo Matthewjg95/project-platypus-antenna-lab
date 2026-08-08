@@ -128,6 +128,13 @@ fun Exec.commonJpackageArgs(type: String) {
     val input = layout.buildDirectory.dir("jpackage-input").get().asFile
 
     doFirst {
+        // jpackage refuses to write into an existing destination and exits 1.
+        // Without this the task succeeds exactly once and then fails on every
+        // rebuild -- the "works on a clean checkout, broken for everyone who
+        // already built it" flavour of bug.
+        dest.resolve(appName).deleteRecursively()
+        dest.listFiles()?.filter { it.name.endsWith(".msi") || it.name.endsWith(".exe") }
+            ?.forEach { it.delete() }
         dest.mkdirs()
         commandLine(
             buildList {
@@ -167,4 +174,30 @@ tasks.register<Exec>("packageInstaller") {
     group = "distribution"
     description = "Native installer (.msi on Windows). Requires the WiX Toolset 3.x."
     commonJpackageArgs(if (isWindows) "msi" else "app-image")
+}
+
+/**
+ * Zip the app image into a single shippable file.
+ *
+ * <p>This is the recommended way to hand Antenna Lab to someone. It needs no
+ * WiX, no .NET Framework 3.5, and no administrator rights -- neither to build it
+ * nor for the recipient to run it. An .msi additionally trips SmartScreen's
+ * unknown-publisher warning unless the installer is code-signed, which a zip
+ * does not.
+ */
+tasks.register<Zip>("packageZip") {
+    group = "distribution"
+    description = "Zip the self-contained app image for distribution. No WiX needed."
+    dependsOn("packageImage")
+
+    from(layout.buildDirectory.dir("dist/$appName"))
+    // Nest under a named folder so unzipping does not scatter 135 MB across
+    // whatever directory the recipient happened to be in.
+    into("$appName $version")
+    archiveFileName = "AntennaLab-$version-windows-x64.zip"
+    destinationDirectory = layout.buildDirectory.dir("dist")
+
+    doLast {
+        logger.lifecycle("Distributable: ${archiveFile.get().asFile.absolutePath}")
+    }
 }
