@@ -334,6 +334,18 @@ carries a 95% confidence interval and a grade — `STRONG`, `MODERATE`, `WEAK`,
 a path, or worse than a 3:1 count imbalance between paths, and the app says so
 instead of quoting a figure.
 
+### The report is built to outlive everything else
+
+The HTML report is one self-contained file: inline SVG chart, inline styles, no
+JavaScript, no external fetches — enforced by a test that hunts for
+reference-bearing attributes. It renders offline, from an email attachment, in
+ten years. A report from a synthetic or replayed session carries a SIMULATED
+banner placed *before* the headline in document order, so a cropped screenshot
+of the number necessarily includes the provenance; the ordering is pinned by a
+test. The chart plots against sample index rather than time, because imported
+firmware CSVs may carry no usable timestamps and an evidence artefact must not
+imply precision the data lacks.
+
 ### Simulated data is watermarked
 
 The synthetic source exists so the app demos without hardware. It also creates an
