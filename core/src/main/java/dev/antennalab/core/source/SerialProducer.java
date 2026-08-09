@@ -51,6 +51,12 @@ public final class SerialProducer implements SampleProducer {
         // data, which is what lets the loop notice interruption and close()
         // promptly instead of hanging on a silent port.
         p.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, READ_TIMEOUT_MS, 0);
+        // Hold DTR/RTS low across the open. The ESP32 auto-reset circuit fires on
+        // a DTR pulse, and a connect that reboots the device kicks it back to its
+        // menu -- the single worst UX moment this app had. Best effort; if the
+        // board resets anyway, the parser eats the boot banner.
+        p.clearDTR();
+        p.clearRTS();
 
         if (!p.openPort()) {
             throw new IOException("could not open " + spec.portName()

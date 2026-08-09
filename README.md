@@ -1,11 +1,15 @@
 # Antenna Lab
 
-An RF experiment manager for 2.4 GHz antenna work, written in Java 26.
+The verification and documentation pipeline for the M5Tab5 antenna test
+instrument, written in Java 26.
 
-Antenna Lab drives an M5Tab5 (ESP32-C6-MINI-1U) whose RF path can be switched
-between the module's on-board chip antenna and an external MMCX connector. It
-streams RSSI over USB serial and plots both paths as live scope traces — but the
-scope is the instrument, not the product.
+**The Tab5 is the instrument.** It measures RSSI, switches between its internal
+antenna and the external patch, and shows a live scope on its own screen.
+Antenna Lab does not compete with any of that — it adds the layers a
+self-contained instrument cannot: durable records, statistics with stated
+confidence, automated experiment execution, cross-run comparison, and
+self-contained HTML evidence. The app finds the instrument on serial by its log
+signature and connects itself; no COM-port archaeology.
 
 **The product is the record.** Antenna Lab keeps a durable library of what was
 built, how it was measured, and what was concluded: antenna designs with their

@@ -133,6 +133,39 @@ public final class AntennaLabApp extends Application {
         stage.setMinWidth(900);
         stage.setMinHeight(560);
         stage.show();
+
+        autoDetectAndConnect();
+    }
+
+    /**
+     * Find the antenna firmware among the serial ports and connect to it,
+     * unprompted. The operator should never have to know what a COM port is;
+     * the dropdown remains only as the manual override.
+     *
+     * <p>Runs on a virtual thread: detection listens on each candidate port for
+     * up to ~2 s, which must never block the UI.
+     */
+    private void autoDetectAndConnect() {
+        sourceStatus.setText("Scanning for antenna hardware…");
+        Thread.ofVirtual().name("firmware-detect").start(() -> {
+            var found = dev.antennalab.core.source.FirmwareDetector
+                    .findAntennaPort(java.time.Duration.ofSeconds(2));
+            Platform.runLater(() -> found.ifPresentOrElse(portName -> {
+                refreshSources();
+                sourceCombo.getItems().stream()
+                        .filter(o -> o.source() instanceof SerialSource s
+                                && s.portName().equals(portName))
+                        .findFirst()
+                        .ifPresent(option -> {
+                            sourceCombo.getSelectionModel().select(option);
+                            sourceStatus.setText("Antenna detected on " + portName);
+                            if (pipeline == null || !pipeline.isRunning()) {
+                                startCapture();
+                            }
+                        });
+            }, () -> sourceStatus.setText(
+                    "No antenna hardware found — synthetic source selected")));
+        });
     }
 
     private ToolBar buildToolBar() {
