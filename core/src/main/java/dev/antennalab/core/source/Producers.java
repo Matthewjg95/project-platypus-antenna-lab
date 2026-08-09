@@ -33,15 +33,10 @@ public final class Producers {
         return switch (source) {
             case SyntheticSource spec -> new SyntheticProducer(spec);
 
-            // Deliberately unimplemented. The firmware's serial format has not
-            // been captured yet, and guessing at it would produce a parser that
-            // looks finished and silently mis-reads real data. This throws until
-            // a real capture is in hand to build against.
-            case SerialSource(String port, int baud) -> throw new UnsupportedOperationException(
-                    ("Serial capture on %s @ %d baud is not implemented yet: the firmware's "
-                            + "output format has not been captured. Use a synthetic source until "
-                            + "the parser is built against a real sample.")
-                            .formatted(port, baud));
+            // Implemented against the real capture of 2026-08-08 (see
+            // Tab5LogParser and its fixture). The long-standing deliberate
+            // UnsupportedOperationException is finally gone.
+            case SerialSource spec -> new SerialProducer(spec);
 
             // Same reasoning: the firmware's CSV column layout is not yet known.
             case ReplaySource(var file, var speed) -> throw new UnsupportedOperationException(

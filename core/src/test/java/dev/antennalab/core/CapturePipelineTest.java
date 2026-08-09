@@ -190,16 +190,17 @@ class CapturePipelineTest {
     }
 
     @Test
-    @DisplayName("unimplemented sources fail loudly and say why, rather than reading garbage")
-    void unimplementedSourcesThrowExplicitly() {
-        // These stay unimplemented on purpose until real captures are available.
-        // The test pins that they fail with an explanation rather than silently
-        // producing plausible-looking nonsense.
-        var serial = assertThrows(UnsupportedOperationException.class,
-                () -> Producers.forSource(SerialSource.onPort("COM7")));
-        assertTrue(serial.getMessage().contains("not implemented"));
-        assertTrue(serial.getMessage().contains("COM7"));
+    @DisplayName("serial sources now open a real producer; replay still fails loudly")
+    void producerAvailabilityMatchesReality() {
+        // Serial is implemented against the 2026-08-08 capture. Constructing the
+        // producer must not touch the port -- opening happens in produce(), on
+        // the pipeline's thread -- so this is safe with no hardware attached.
+        var serial = Producers.forSource(SerialSource.onPort("COM7"));
+        assertTrue(serial.describe().contains("COM7"));
+        serial.close();
 
+        // Replay stays unimplemented on purpose: the firmware's CSV layout has
+        // still not been captured, and guessing would be worse than throwing.
         var replay = assertThrows(UnsupportedOperationException.class,
                 () -> Producers.forSource(ReplaySource.unpaced(Path.of("run.csv"))));
         assertTrue(replay.getMessage().contains("not implemented"));

@@ -1,0 +1,575 @@
+ESP-ROM:esp32p4-eco2-20240710
+] screen=1 locked=1 scanning=0
+[LOOP 9400] enter screen=1
+ESP-ROM:esp32p4-eco2-20240710
+Build:Jul 10 2024
+rst:0x17 (CHIP_USB_UART_RESET),boot:0x20c (SPI_FAST_FLASH_BOOT)
+Core0 Saved PC:0x4ff054f0
+Core1 Saved PC:0x4ff00304
+SPI mode:DIO, clock div:1
+load:0x4ff33ce0,len:0x118c
+load:0x4ff2abd0,len:0xcd0
+load:0x4ff2cbd0,len:0x3304
+entry 0x4ff2abd0
+
+=== M5View booting ===
+auto detect board:22
+Display: 1280x720
+[   921][E][SD_MMC.cpp:143] setPins(): SDMMCFS: specified pins are not supported when using IOMUX (SDMMC SLOT 0).
+SD mounted OK
+M5View ready
+sdio_mempool_create free:31843752 min-free:31842748 lfb-def:30932980 lfb-8bit:30932980
+
+[hb] up=5s home=1 ota=1 heap=418676
+[ANT] 1280x720
+[EXP] 0x43 P0 ready
+[  6657][E][WiFiGeneric.cpp:286] setPins(): SDIO pins must be set before WiFi is initialized
+[SD] ok
+[SCAN-SEL] starting initial scan
+[SCAN-SEL] returned n=-2
+[ANT READY]
+[LOOP 1] enter screen=0
+[ota] suspended: applet owns the radio
+[LOOP 2] enter screen=0
+[LOOP 3] enter screen=0
+[LOOP 4] enter screen=0
+[LOOP 5] enter screen=0
+[LOOP 6] enter screen=0
+[LOOP 7] enter screen=0
+[LOOP 8] enter screen=0
+[LOOP 9] enter screen=0
+[LOOP 50] enter screen=0
+[LOOP 100] enter screen=0
+[hb] up=10s home=0 ota=3 heap=416740
+[LOOP 150] enter screen=0
+[SEL-TOUCH] tap at x=1059 y=672
+[SCAN-SEL] starting initial scan
+[SCAN-SEL] returned n=24
+[hb] up=15s home=0 ota=3 heap=415716
+[LOOP 200] enter screen=0
+[SEL-TOUCH] tap at x=156 y=104
+[SEL] selected SSID: "SpectrumSetup-C1" BSSID: FC:12:63:B5:8A:BF ch=1 RSSI: -38 dBm
+[SEL] WiFi state reset, transitioning to scope
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-35.0
+[SAMPLE] exit OK
+[ANT-SW] doAntSwitch entered, mode=INT
+[ANT] -> INT P0=LOW ok
+[ANT-SW] doAntSwitch exit
+[LOOP 250] enter screen=1
+[LOOP 300] enter screen=1
+[LOOP tick 100] screen=1 locked=1 scanning=0
+[LOOP 350] enter screen=1
+[SCOPE-TOUCH] tap x=163 y=719 BY=674
+[SCOPE-TOUCH] INT button
+[ANT-SW] doAntSwitch entered, mode=INT
+[ANT] -> INT P0=LOW ok
+[ANT-SW] doAntSwitch exit
+[LOOP 400] enter screen=1
+[LOOP tick 200] screen=1 locked=1 scanning=0
+[LOOP 450] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-35.0
+[SAMPLE] exit OK
+[LOOP 500] enter screen=1
+[LOOP tick 300] screen=1 locked=1 scanning=0
+[LOOP 550] enter screen=1
+[LOOP 600] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -36 dBm
+[SAMPLE] enter: INT = -36 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=2 avg=-35.5
+[SAMPLE] exit OK
+[LOOP tick 400] screen=1 locked=1 scanning=0
+[LOOP 650] enter screen=1
+[hb] up=20s home=0 ota=3 heap=415548
+[LOOP 700] enter screen=1
+[LOOP tick 500] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 86ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=3 avg=-35.3
+[SAMPLE] exit OK
+[LOOP 750] enter screen=1
+[LOOP 800] enter screen=1
+[LOOP tick 600] screen=1 locked=1 scanning=0
+[LOOP 850] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -36 dBm
+[SAMPLE] enter: INT = -36 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=4 avg=-35.5
+[SAMPLE] exit OK
+[LOOP 900] enter screen=1
+[LOOP tick 700] screen=1 locked=1 scanning=0
+[LOOP 950] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 92ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -33 dBm
+[SAMPLE] enter: INT = -33 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=5 avg=-35.0
+[SAMPLE] exit OK
+[LOOP 1000] enter screen=1
+[LOOP tick 800] screen=1 locked=1 scanning=0
+[LOOP 1050] enter screen=1
+[LOOP 1100] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=7 in 87ms
+[SCAN] complete, found 7 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=6 avg=-35.0
+[SAMPLE] exit OK
+[LOOP tick 900] screen=1 locked=1 scanning=0
+[LOOP 1150] enter screen=1
+[LOOP 1200] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=7 avg=-35.0
+[SAMPLE] exit OK
+[LOOP tick 1000] screen=1 locked=1 scanning=0
+[LOOP 1250] enter screen=1
+[hb] up=25s home=0 ota=3 heap=415548
+[LOOP 1300] enter screen=1
+[LOOP tick 1100] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 86ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=8 avg=-35.0
+[SAMPLE] exit OK
+[LOOP 1350] enter screen=1
+[LOOP 1400] enter screen=1
+[LOOP tick 1200] screen=1 locked=1 scanning=0
+[LOOP 1450] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=9 avg=-35.0
+[SAMPLE] exit OK
+[LOOP 1500] enter screen=1
+[SCOPE-TOUCH] tap x=515 y=688 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP tick 1300] screen=1 locked=1 scanning=0
+[LOOP 1550] enter screen=1
+[LOOP 1600] enter screen=1
+[LOOP tick 1400] screen=1 locked=1 scanning=0
+[LOOP 1650] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -39 dBm
+[SAMPLE] enter: EXT = -39 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-39.0
+[SAMPLE] exit OK
+[LOOP 1700] enter screen=1
+[LOOP tick 1500] screen=1 locked=1 scanning=0
+[LOOP 1750] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: EXT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=2 avg=-38.5
+[SAMPLE] exit OK
+[LOOP 1800] enter screen=1
+[LOOP tick 1600] screen=1 locked=1 scanning=0
+[LOOP 1850] enter screen=1
+[hb] up=30s home=0 ota=3 heap=415548
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -41 dBm
+[SAMPLE] enter: EXT = -41 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=3 avg=-39.3
+[SAMPLE] exit OK
+[LOOP 1900] enter screen=1
+[LOOP tick 1700] screen=1 locked=1 scanning=0
+[LOOP 1950] enter screen=1
+[LOOP 2000] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: EXT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=4 avg=-39.0
+[SAMPLE] exit OK
+[LOOP tick 1800] screen=1 locked=1 scanning=0
+[LOOP 2050] enter screen=1
+[LOOP 2100] enter screen=1
+[LOOP tick 1900] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: EXT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=5 avg=-38.8
+[SAMPLE] exit OK
+[LOOP 2150] enter screen=1
+[LOOP 2200] enter screen=1
+[LOOP tick 2000] screen=1 locked=1 scanning=0
+[LOOP 2250] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -37 dBm
+[SAMPLE] enter: EXT = -37 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=6 avg=-38.5
+[SAMPLE] exit OK
+[LOOP 2300] enter screen=1
+[LOOP tick 2100] screen=1 locked=1 scanning=0
+[LOOP 2350] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -39 dBm
+[SAMPLE] enter: EXT = -39 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=7 avg=-38.6
+[SAMPLE] exit OK
+[LOOP 2400] enter screen=1
+[LOOP tick 2200] screen=1 locked=1 scanning=0
+[LOOP 2450] enter screen=1
+[hb] up=35s home=0 ota=3 heap=415548
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: EXT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=8 avg=-38.5
+[SAMPLE] exit OK
+[LOOP 2500] enter screen=1
+[LOOP tick 2300] screen=1 locked=1 scanning=0
+[LOOP 2550] enter screen=1
+[LOOP 2600] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -50 dBm
+[SAMPLE] enter: EXT = -50 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=9 avg=-39.8
+[SAMPLE] exit OK
+[LOOP tick 2400] screen=1 locked=1 scanning=0
+[LOOP 2650] enter screen=1
+[LOOP 2700] enter screen=1
+[LOOP tick 2500] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 86ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: EXT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=10 avg=-39.6
+[SAMPLE] exit OK
+[LOOP 2750] enter screen=1
+[LOOP 2800] enter screen=1
+[LOOP tick 2600] screen=1 locked=1 scanning=0
+[LOOP 2850] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -44 dBm
+[SAMPLE] enter: EXT = -44 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=11 avg=-40.0
+[SAMPLE] exit OK
+[SCOPE-TOUCH] tap x=515 y=688 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 2900] enter screen=1
+[LOOP tick 2700] screen=1 locked=1 scanning=0
+[LOOP 2950] enter screen=1
+[LOOP 3000] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=4 in 86ms
+[SCAN] complete, found 4 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -37 dBm
+[SAMPLE] enter: EXT = -37 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-37.0
+[SAMPLE] exit OK
+[LOOP tick 2800] screen=1 locked=1 scanning=0
+[LOOP 3050] enter screen=1
+[hb] up=40s home=0 ota=3 heap=415548
+[SCOPE-TOUCH] tap x=534 y=675 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3100] enter screen=1
+[LOOP tick 2900] screen=1 locked=1 scanning=0
+[LOOP 3150] enter screen=1
+[LOOP 3200] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -45 dBm
+[SAMPLE] enter: EXT = -45 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-45.0
+[SAMPLE] exit OK
+[LOOP tick 3000] screen=1 locked=1 scanning=0
+[LOOP 3250] enter screen=1
+[SCOPE-TOUCH] tap x=477 y=675 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3300] enter screen=1
+[LOOP tick 3100] screen=1 locked=1 scanning=0
+[LOOP 3350] enter screen=1
+[LOOP 3400] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 99ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -43 dBm
+[SAMPLE] enter: EXT = -43 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-43.0
+[SAMPLE] exit OK
+[LOOP tick 3200] screen=1 locked=1 scanning=0
+[SCOPE-TOUCH] tap x=512 y=670 BY=674
+[LOOP 3450] enter screen=1
+[LOOP 3500] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -45 dBm
+[SAMPLE] enter: EXT = -45 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=2 avg=-44.0
+[SAMPLE] exit OK
+[LOOP tick 3300] screen=1 locked=1 scanning=0
+[LOOP 3550] enter screen=1
+[SCOPE-TOUCH] tap x=546 y=678 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3600] enter screen=1
+[LOOP tick 3400] screen=1 locked=1 scanning=0
+[SCOPE-TOUCH] tap x=479 y=672 BY=674
+[LOOP 3650] enter screen=1
+[hb] up=45s home=0 ota=3 heap=415548
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -43 dBm
+[SAMPLE] enter: EXT = -43 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-43.0
+[SAMPLE] exit OK
+[LOOP 3700] enter screen=1
+[LOOP tick 3500] screen=1 locked=1 scanning=0
+[SCOPE-TOUCH] tap x=526 y=687 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3750] enter screen=1
+[LOOP 3800] enter screen=1
+[LOOP tick 3600] screen=1 locked=1 scanning=0
+[LOOP 3850] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -42 dBm
+[SAMPLE] enter: EXT = -42 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-42.0
+[SAMPLE] exit OK
+[SCOPE-TOUCH] tap x=512 y=694 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3900] enter screen=1
+[LOOP tick 3700] screen=1 locked=1 scanning=0
+[SCOPE-TOUCH] tap x=512 y=694 BY=674
+[SCOPE-TOUCH] EXT button
+[ANT-SW] doAntSwitch entered, mode=EXT
+[ANT] -> EXT P0=HIGH ok
+[ANT-SW] doAntSwitch exit
+[LOOP 3950] enter screen=1
+[SCOPE-TOUCH] tap x=492 y=672 BY=674
+[LOOP 4000] enter screen=1
+[LOOP tick 3800] screen=1 locked=1 scanning=0
+[LOOP 4050] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -41 dBm
+[SAMPLE] enter: EXT = -41 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-41.0
+[SAMPLE] exit OK
+[LOOP 4100] enter screen=1
+[LOOP tick 3900] screen=1 locked=1 scanning=0
+[LOOP 4150] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -47 dBm
+[SAMPLE] enter: EXT = -47 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=2 avg=-44.0
+[SAMPLE] exit OK
+[SCOPE-TOUCH] tap x=226 y=685 BY=674
+[SCOPE-TOUCH] INT button
+[ANT-SW] doAntSwitch entered, mode=INT
+[ANT] -> INT P0=LOW ok
+[ANT-SW] doAntSwitch exit
+[LOOP 4200] enter screen=1
+[LOOP tick 4000] screen=1 locked=1 scanning=0
+[LOOP 4250] enter screen=1
+[hb] up=50s home=0 ota=3 heap=415548
+[LOOP 4300] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=7 in 87ms
+[SCAN] complete, found 7 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -34 dBm
+[SAMPLE] enter: INT = -34 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=1 avg=-34.0
+[SAMPLE] exit OK
+[LOOP tick 4100] screen=1 locked=1 scanning=0
+[LOOP 4350] enter screen=1
+[LOOP 4400] enter screen=1
+[LOOP tick 4200] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -32 dBm
+[SAMPLE] enter: INT = -32 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=2 avg=-33.0
+[SAMPLE] exit OK
+[LOOP 4450] enter screen=1
+[LOOP 4500] enter screen=1
+[LOOP tick 4300] screen=1 locked=1 scanning=0
+[LOOP 4550] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 87ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -33 dBm
+[SAMPLE] enter: INT = -33 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=3 avg=-33.0
+[SAMPLE] exit OK
+[LOOP 4600] enter screen=1
+[LOOP tick 4400] screen=1 locked=1 scanning=0
+[LOOP 4650] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -35 dBm
+[SAMPLE] enter: INT = -35 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=4 avg=-33.5
+[SAMPLE] exit OK
+[LOOP 4700] enter screen=1
+[LOOP tick 4500] screen=1 locked=1 scanning=0
+[LOOP 4750] enter screen=1
+[LOOP 4800] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=5 in 87ms
+[SCAN] complete, found 5 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: INT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=5 avg=-34.4
+[SAMPLE] exit OK
+[LOOP tick 4600] screen=1 locked=1 scanning=0
+[LOOP 4850] enter screen=1
+[hb] up=55s home=0 ota=3 heap=415548
+[LOOP 4900] enter screen=1
+[LOOP tick 4700] screen=1 locked=1 scanning=0
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 87ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -36 dBm
+[SAMPLE] enter: INT = -36 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=6 avg=-34.7
+[SAMPLE] exit OK
+[LOOP 4950] enter screen=1
+[LOOP 5000] enter screen=1
+[LOOP tick 4800] screen=1 locked=1 scanning=0
+[LOOP 5050] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=3 in 86ms
+[SCAN] complete, found 3 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -37 dBm
+[SAMPLE] enter: INT = -37 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=7 avg=-35.0
+[SAMPLE] exit OK
+[LOOP 5100] enter screen=1
+[LOOP tick 4900] screen=1 locked=1 scanning=0
+[LOOP 5150] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=6 in 87ms
+[SCAN] complete, found 6 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -38 dBm
+[SAMPLE] enter: INT = -38 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=8 avg=-35.4
+[SAMPLE] exit OK
+[LOOP 5200] enter screen=1
+[LOOP tick 5000] screen=1 locked=1 scanning=0
+[LOOP 5250] enter screen=1
+[SCAN] single-channel scan ch=1
+[SCAN] returned n=7 in 87ms
+[SCAN] complete, found 7 networks, locked=1, looking for FC:12:63:B5:8A:BF
+[SCAN] found target AP at index 0: -37 dBm
+[SAMPLE] enter: INT = -37 dBm
+[SAMPLE] history updated
+[SAMPLE] stats updated: n=9 avg=-35.6
+[SAMPLE] exit OK
+[LOOP 5300] enter screen=1
+[LOOP tick 5100] screen=1 locked=1 scanning=0
+[LOOP 5350] enter screen=1
+[

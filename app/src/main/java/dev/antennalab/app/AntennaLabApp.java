@@ -2,6 +2,7 @@ package dev.antennalab.app;
 
 import dev.antennalab.core.domain.AntennaPath;
 import dev.antennalab.core.domain.RssiSample;
+import dev.antennalab.core.domain.SerialSource;
 import dev.antennalab.core.domain.Session;
 import dev.antennalab.core.domain.Source;
 import dev.antennalab.core.domain.SyntheticSource;
@@ -60,6 +61,8 @@ public final class AntennaLabApp extends Application {
     private final Button markerButton = new Button("Marker");
     private final Button clearButton = new Button("Clear");
     private final Button exportButton = new Button("Export report…");
+    private final javafx.scene.control.ComboBox<SourceOption> sourceCombo =
+            new javafx.scene.control.ComboBox<>();
 
     /** The last completed capture, exportable until the next one starts. */
     private Session lastSession;
@@ -160,8 +163,9 @@ public final class AntennaLabApp extends Application {
         });
 
         Label sourceLabel = new Label("Source:");
-        Label sourceValue = new Label("Synthetic (no hardware)");
-        sourceValue.getStyleClass().add("status-text");
+        refreshSources();
+        Button rescanButton = new Button("⟳");
+        rescanButton.setOnAction(e -> refreshSources());
 
         exportButton.setOnAction(e -> exportReport());
         exportButton.setDisable(true);
@@ -170,7 +174,7 @@ public final class AntennaLabApp extends Application {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         return new ToolBar(
-                sourceLabel, sourceValue,
+                sourceLabel, sourceCombo, rescanButton,
                 new Separator(),
                 startButton, stopButton, pauseButton,
                 new Separator(),
@@ -178,6 +182,39 @@ public final class AntennaLabApp extends Application {
                 new Separator(),
                 exportButton,
                 spacer);
+    }
+
+    /** One entry in the source picker: a label and the Source it describes. */
+    private record SourceOption(String label, Source source) {
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    /**
+     * Repopulate the source picker: synthetic first, then every serial port.
+     *
+     * <p>Bluetooth "serial" links appear in the OS port list too, so the
+     * descriptive name is shown alongside — the Tab5 enumerates as a USB Serial
+     * Device, which is how the operator tells COM6 from a headset.
+     */
+    private void refreshSources() {
+        SourceOption previous = sourceCombo.getValue();
+        sourceCombo.getItems().setAll(new SourceOption(
+                "Synthetic (no hardware)", SyntheticSource.demoWithSeed(System.nanoTime())));
+        for (var port : com.fazecast.jSerialComm.SerialPort.getCommPorts()) {
+            String name = port.getSystemPortName();
+            sourceCombo.getItems().add(new SourceOption(
+                    "%s — %s".formatted(name, port.getDescriptivePortName()),
+                    SerialSource.onPort(name)));
+        }
+        // Keep the operator's selection across a rescan when it still exists.
+        sourceCombo.getSelectionModel().select(
+                previous == null ? sourceCombo.getItems().get(0)
+                        : sourceCombo.getItems().stream()
+                                .filter(o -> o.label().equals(previous.label()))
+                                .findFirst().orElse(sourceCombo.getItems().get(0)));
     }
 
     /**
@@ -247,17 +284,26 @@ public final class AntennaLabApp extends Application {
         if (pipeline != null && pipeline.isRunning()) {
             return;
         }
-        // Days 1-2 milestone: synthetic only. Serial and replay sources are wired
-        // through the same pipeline, but their producers stay unimplemented until
-        // the firmware's real output has been captured.
-        Source source = SyntheticSource.demoWithSeed(System.nanoTime());
+        SourceOption chosen = sourceCombo.getValue();
+        Source source = chosen != null ? chosen.source()
+                : SyntheticSource.demoWithSeed(System.nanoTime());
 
         pipeline = new CapturePipeline(source, new UiCaptureListener());
         pipeline.setRecording(true);
         pipeline.start();
 
         sourceStatus.setText(Source.summarise(source));
-        provenanceStatus.setText("SIMULATED - not measured data");
+        // Provenance is styled as well as worded: measured data must not share a
+        // colour with simulation. Note for serial runs: opening the port resets
+        // the board (DTR), so the first samples arrive after a ~5 s reboot.
+        provenanceStatus.getStyleClass().removeAll("simulated", "live");
+        if (source.isLiveHardware()) {
+            provenanceStatus.setText("LIVE - measured on hardware (board reboots on connect)");
+            provenanceStatus.getStyleClass().add("live");
+        } else {
+            provenanceStatus.setText("SIMULATED - not measured data");
+            provenanceStatus.getStyleClass().add("simulated");
+        }
         setRunningState(true);
     }
 
