@@ -87,6 +87,11 @@ public final class CapturePipeline implements AutoCloseable {
 
     private volatile Thread owner;
     private volatile SampleProducer producer;
+    private final SampleProducer injectedProducer;
+
+    /** Per-sample observers; called on the buffer stage's virtual thread. */
+    private final List<java.util.function.Consumer<RssiSample>> sampleTaps =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
 
     /** An operator annotation pinned to a point on the trace. */
     public record Marker(long atSequence, java.time.Instant at, String label) {
@@ -97,6 +102,19 @@ public final class CapturePipeline implements AutoCloseable {
     }
 
     public CapturePipeline(Source source, CaptureListener listener, int windowSamples) {
+        this(source, null, listener, windowSamples);
+    }
+
+    /**
+     * Variant that injects the producer directly instead of resolving it from
+     * the source. Exists for the experiment runner's tests, which need a
+     * producer whose antenna path obeys {@code CommandChannel} commands — a
+     * thing no real {@link Source} description can express.
+     */
+    public CapturePipeline(Source source,
+                           SampleProducer injectedProducer,
+                           CaptureListener listener,
+                           int windowSamples) {
         if (source == null) {
             throw new IllegalArgumentException("source is required");
         }
@@ -104,6 +122,7 @@ public final class CapturePipeline implements AutoCloseable {
             throw new IllegalArgumentException("listener is required");
         }
         this.source = source;
+        this.injectedProducer = injectedProducer;
         this.listener = listener;
         this.buffer = new RollingBuffer(windowSamples);
     }
@@ -126,7 +145,9 @@ public final class CapturePipeline implements AutoCloseable {
      */
     private void run() {
         try {
-            SampleProducer prod = Producers.forSource(source);
+            SampleProducer prod = injectedProducer != null
+                    ? injectedProducer
+                    : Producers.forSource(source);
             producer = prod;
 
             // Both resources close in reverse order on exit. The scope closing
@@ -184,6 +205,9 @@ public final class CapturePipeline implements AutoCloseable {
                     buffer.add(sample);
                     if (recording) {
                         recorded.add(sample);
+                    }
+                    for (var tap : sampleTaps) {
+                        tap.accept(sample);
                     }
                 }
             }
@@ -271,6 +295,19 @@ public final class CapturePipeline implements AutoCloseable {
     /** @see #setRecording(boolean) */
     public boolean isRecording() {
         return recording;
+    }
+
+    /**
+     * Observe every sample as it lands in the buffer.
+     *
+     * <p>Called on a pipeline virtual thread at sample rate — the experiment
+     * runner's confirmation logic lives here. Keep taps cheap; the frame-rate
+     * {@link CaptureListener} remains the right place for UI work.
+     */
+    public void addSampleTap(java.util.function.Consumer<RssiSample> tap) {
+        if (tap != null) {
+            sampleTaps.add(tap);
+        }
     }
 
     /** Pin an annotation to the current point on the trace. */
