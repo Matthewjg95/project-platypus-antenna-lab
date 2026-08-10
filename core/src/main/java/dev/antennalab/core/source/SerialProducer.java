@@ -25,7 +25,7 @@ import java.time.Instant;
  * <p>Samples are stamped on arrival: the firmware prints no per-sample
  * timestamps, and at its ~1.5–2 s cadence USB latency is noise.
  */
-public final class SerialProducer implements SampleProducer {
+public final class SerialProducer implements SampleProducer, CommandChannel {
 
     /** Semi-blocking read window; also the cadence of interrupt/close checks. */
     private static final int READ_TIMEOUT_MS = 500;
@@ -102,6 +102,24 @@ public final class SerialProducer implements SampleProducer {
         return "Serial %s @ %d baud (%d lines seen, %d ignored)"
                 .formatted(spec.portName(), spec.baudRate(),
                         parser.linesSeen(), parser.linesIgnored());
+    }
+
+    @Override
+    public java.util.Optional<CommandChannel> commands() {
+        return java.util.Optional.of(this);
+    }
+
+    @Override
+    public void sendCommand(byte[] bytes) throws IOException {
+        SerialPort p = port;
+        if (p == null || !p.isOpen()) {
+            throw new IOException("cannot command " + spec.portName() + ": port not open");
+        }
+        int written = p.writeBytes(bytes, bytes.length);
+        if (written != bytes.length) {
+            throw new IOException("short write to " + spec.portName()
+                    + " (" + written + " of " + bytes.length + " bytes)");
+        }
     }
 
     @Override

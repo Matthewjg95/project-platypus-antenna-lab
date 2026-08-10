@@ -297,6 +297,16 @@ public final class CapturePipeline implements AutoCloseable {
         recorded.clear();
     }
 
+    /**
+     * The command channel to the device this capture is reading, when it has
+     * one — the write half the experiment runner uses to drive the RF switch
+     * while this pipeline keeps reading confirmations off the same stream.
+     */
+    public java.util.Optional<dev.antennalab.core.source.CommandChannel> commands() {
+        SampleProducer p = producer;
+        return p == null ? java.util.Optional.empty() : p.commands();
+    }
+
     /** The rolling window, for callers that want to snapshot outside a frame callback. */
     public RollingBuffer buffer() {
         return buffer;

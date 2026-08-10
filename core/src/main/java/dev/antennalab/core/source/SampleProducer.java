@@ -21,6 +21,17 @@ public interface SampleProducer extends AutoCloseable {
     /** Human-readable name for status display and error messages. */
     String describe();
 
+    /**
+     * The command channel to the device, when this producer has one.
+     *
+     * <p>Empty for synthetic and replay sources — there is nothing to command.
+     * Callers that need remote control (the experiment runner's hands-free
+     * tier) check this and fall back to guided prompts when absent.
+     */
+    default java.util.Optional<CommandChannel> commands() {
+        return java.util.Optional.empty();
+    }
+
     /** Release the port, file handle or timer. Must be idempotent. */
     @Override
     void close();
