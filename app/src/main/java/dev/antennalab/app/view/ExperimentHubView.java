@@ -53,6 +53,14 @@ public final class ExperimentHubView extends BorderPane {
 
     private final Label libraryStatus = new Label();
     private Consumer<Experiment> onCaptureRequested = e -> { };
+    private Consumer<Experiment> onRunRequested = e -> { };
+
+    /**
+     * Resolves run ids to stored data. Optional so the render tests can build a
+     * hub without touching the filesystem; when absent, runs are listed but
+     * cannot be opened.
+     */
+    private dev.antennalab.core.session.SessionStore sessionStore;
 
     public ExperimentHubView(LabLibrary library) {
         if (library == null) {
@@ -83,6 +91,16 @@ public final class ExperimentHubView extends BorderPane {
     /** Called when the operator asks to capture a run for an experiment. */
     public void setOnCaptureRequested(Consumer<Experiment> handler) {
         this.onCaptureRequested = handler == null ? e -> { } : handler;
+    }
+
+    /** Called when the operator asks to run the experiment's procedure automatically. */
+    public void setOnRunRequested(Consumer<Experiment> handler) {
+        this.onRunRequested = handler == null ? e -> { } : handler;
+    }
+
+    /** Give the hub a store so run ids resolve to openable data. */
+    public void setSessionStore(dev.antennalab.core.session.SessionStore store) {
+        this.sessionStore = store;
     }
 
     private ToolBar buildToolBar() {
@@ -247,16 +265,75 @@ public final class ExperimentHubView extends BorderPane {
             detail.getChildren().add(muted("No runs captured yet."));
         } else {
             for (String runId : experiment.runIds()) {
-                Label row = new Label("• " + runId);
-                row.getStyleClass().add("trace-readout");
-                detail.getChildren().add(row);
+                detail.getChildren().add(runRow(runId));
             }
         }
 
-        Button capture = new Button("Capture a run…");
+        boolean concluded = experiment.status() == Experiment.Status.CONCLUDED;
+
+        Button run = new Button("Run experiment");
+        run.getStyleClass().add("primary");
+        run.setOnAction(e -> onRunRequested.accept(experiment));
+        run.setDisable(concluded);
+
+        Button capture = new Button("Free capture…");
         capture.setOnAction(e -> onCaptureRequested.accept(experiment));
-        capture.setDisable(experiment.status() == Experiment.Status.CONCLUDED);
-        detail.getChildren().addAll(spacer(6), capture);
+        capture.setDisable(concluded);
+
+        HBox actions = new HBox(8, run, capture);
+        detail.getChildren().addAll(spacer(6), actions);
+    }
+
+    /**
+     * One run, expandable into what it actually found.
+     *
+     * <p>A run id on its own is an assertion; the numbers under it are the
+     * evidence. Clicking resolves the id through the session store and shows the
+     * counts and delta — or says plainly that the data is missing, which is a
+     * real state (a deleted file, a run recorded before persistence existed) and
+     * must not look the same as a run with no effect.
+     */
+    private VBox runRow(String runId) {
+        Label header = new Label("▸ " + runId);
+        header.getStyleClass().add("trace-readout");
+        VBox row = new VBox(2, header);
+        Label detailLine = new Label();
+        detailLine.getStyleClass().add("step-verification");
+        detailLine.setWrapText(true);
+
+        header.setOnMouseClicked(e -> {
+            if (row.getChildren().size() > 1) {
+                row.getChildren().remove(detailLine);
+                header.setText("▸ " + runId);
+                return;
+            }
+            header.setText("▾ " + runId);
+            detailLine.setText(describeRun(runId));
+            row.getChildren().add(detailLine);
+        });
+        header.setStyle("-fx-cursor: hand;");
+        return row;
+    }
+
+    /** Summarise a stored run, or explain why it cannot be summarised. */
+    private String describeRun(String runId) {
+        if (sessionStore == null) {
+            return "no session store attached";
+        }
+        var found = sessionStore.load(runId);
+        if (found.isEmpty()) {
+            return "data not found — this run id has no stored session";
+        }
+        var session = found.get();
+        long chip = session.countFor(dev.antennalab.core.domain.AntennaPath.CHIP);
+        long ext = session.countFor(dev.antennalab.core.domain.AntennaPath.EXTERNAL);
+        String counts = "n=%d chip / %d external".formatted(chip, ext);
+        if (!session.hasBothPaths()) {
+            return counts + " — one path only, no comparison possible";
+        }
+        var delta = dev.antennalab.core.stats.AntennaDelta.of(session);
+        // The headline never appears without its qualification, here as anywhere.
+        return "%s — %s, %s".formatted(counts, delta.headline(), delta.qualification());
     }
 
     private void addConclusionSection(Experiment experiment) {

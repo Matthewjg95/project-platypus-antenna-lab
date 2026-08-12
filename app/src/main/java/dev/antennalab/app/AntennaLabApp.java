@@ -71,7 +71,11 @@ public final class AntennaLabApp extends Application {
     private int frameCounter;
 
     private LabLibrary library;
+    private dev.antennalab.core.session.SessionStore sessionStore;
     private ExperimentHubView hub;
+
+    /** Non-null while an automated procedure run is in flight. */
+    private dev.antennalab.core.run.ExperimentRunner runner;
     private TabPane tabs;
     private Tab scopeTab;
 
@@ -96,7 +100,11 @@ public final class AntennaLabApp extends Application {
             library.put(PlatypusCatalog.headlineExperiment(java.time.Instant.now()));
             library.save();
         }
+        sessionStore = dev.antennalab.core.session.SessionStore.openOrCreate(
+                dev.antennalab.core.session.SessionStore.defaultRoot());
         hub = new ExperimentHubView(library);
+        hub.setSessionStore(sessionStore);
+        hub.setOnRunRequested(this::startAutomatedRun);
         // Selecting "capture a run" from the hub switches to the scope, so the two
         // halves of the app are one workflow rather than two apps in a window.
         hub.setOnCaptureRequested(experiment -> {
@@ -342,25 +350,19 @@ public final class AntennaLabApp extends Application {
 
     private void stopCapture() {
         if (pipeline != null) {
+            // An automated run persists itself through the runner's outcome;
+            // stopping mid-run must not also record a partial one under a second
+            // id, or one bench run would appear twice in the record.
+            boolean midRun = runner != null && !runner.isFinished();
+            runner = null;
             pipeline.stop();
-            captureSession();
-            recordRunAgainstExperiment();
+            if (!midRun) {
+                recordRunAgainstExperiment();
+            } else {
+                sourceStatus.setText("Run stopped early — nothing recorded");
+            }
         }
         setRunningState(false);
-    }
-
-    /** Freeze the finished capture into a Session so it can be exported. */
-    private void captureSession() {
-        if (pipeline == null || pipeline.recordedSamples().isEmpty()) {
-            return;
-        }
-        var meta = new dev.antennalab.core.domain.SessionMetadata(
-                activeExperiment != null ? activeExperiment.title() : "Ad-hoc capture",
-                0.0, "", dev.antennalab.core.domain.SessionMetadata.CHANNEL_UNKNOWN,
-                activeExperiment != null ? String.join(", ", activeExperiment.dutIds()) : "",
-                "", java.time.Instant.now());
-        lastSession = Session.of(pipeline.source(), meta, pipeline.recordedSamples());
-        exportButton.setDisable(false);
     }
 
     /**
@@ -378,20 +380,184 @@ public final class AntennaLabApp extends Application {
         if (activeExperiment == null || pipeline == null) {
             return;
         }
-        int captured = pipeline.recordedSamples().size();
-        if (captured == 0) {
+        recordRun(pipeline.recordedSamples(), null);
+    }
+
+    /**
+     * Persist samples as a run of the active experiment.
+     *
+     * <p>The session is saved <em>first</em>, under the same id the experiment
+     * will reference. Attaching a run id before the data exists is how you get
+     * an experiment that claims evidence it cannot produce — so if the write
+     * fails, nothing is attached and the operator is told.
+     *
+     * @param note appended to the run's stored notes, e.g. an automated run's
+     *             validity verdict; null for a free capture.
+     */
+    private void recordRun(java.util.List<RssiSample> samples, String note) {
+        if (samples == null || samples.isEmpty()) {
             sourceStatus.setText("Nothing captured; no run recorded");
             return;
         }
         String runId = "run-" + java.time.Instant.now().toString().replaceAll("[:.]", "-");
-        library.experiment(activeExperiment.id()).ifPresent(current -> {
-            Experiment updated = current.withRun(runId, java.time.Instant.now());
-            library.put(updated);
-            library.save();
-            activeExperiment = updated;
-            hub.refresh();
+        var meta = new dev.antennalab.core.domain.SessionMetadata(
+                activeExperiment != null ? activeExperiment.title() : "Ad-hoc capture",
+                0.0, "", dev.antennalab.core.domain.SessionMetadata.CHANNEL_UNKNOWN,
+                activeExperiment != null ? String.join(", ", activeExperiment.dutIds()) : "",
+                note == null ? "" : note,
+                java.time.Instant.now());
+        Session session = new Session(runId, pipeline.source(), meta, samples);
+
+        try {
+            sessionStore.save(session);
+        } catch (RuntimeException ex) {
+            sourceStatus.setText("Run NOT recorded — could not save session: " + ex.getMessage());
+            return;
+        }
+        lastSession = session;
+        exportButton.setDisable(false);
+
+        if (activeExperiment != null) {
+            library.experiment(activeExperiment.id()).ifPresent(current -> {
+                Experiment updated = current.withRun(runId, java.time.Instant.now());
+                library.put(updated);
+                library.save();
+                activeExperiment = updated;
+                hub.refresh();
+            });
+        }
+        sourceStatus.setText("Recorded %,d samples as %s".formatted(samples.size(), runId));
+    }
+
+    /**
+     * Run an experiment's procedure automatically, end to end.
+     *
+     * <p>Switches the view to the scope so the operator watches the run happen,
+     * starts capture if it is not already running, then hands samples to an
+     * {@link dev.antennalab.core.run.ExperimentRunner} through the pipeline's
+     * sample tap. The runner owns correctness — confirmed switches, settle
+     * discards, balanced blocks, closing baseline — and this method owns only
+     * the UI and the persistence that follows.
+     */
+    private void startAutomatedRun(Experiment experiment) {
+        var procedure = library.procedure(experiment.procedureId());
+        if (procedure.isEmpty()) {
+            sourceStatus.setText("Cannot run: procedure '" + experiment.procedureId()
+                    + "' is not in this library");
+            tabs.getSelectionModel().select(scopeTab);
+            return;
+        }
+        activeExperiment = experiment;
+        tabs.getSelectionModel().select(scopeTab);
+
+        if (pipeline == null || !pipeline.isRunning()) {
+            startCapture();
+        }
+        if (pipeline == null || !pipeline.isRunning()) {
+            sourceStatus.setText("Cannot run: no capture source is available");
+            return;
+        }
+
+        var plan = dev.antennalab.core.run.ExperimentRunner.planFor(procedure.get(), 2);
+        boolean commanded = pipeline.commands().isPresent();
+
+        runner = new dev.antennalab.core.run.ExperimentRunner(
+                plan, pipeline.commands(), new RunListener(commanded));
+        // The tap delivers samples on the pipeline's own thread; the runner is a
+        // pure state machine, so it runs there and only the UI hops to JavaFX.
+        pipeline.addSampleTap(s -> {
+            var active = runner;
+            if (active != null && !active.isFinished()) {
+                active.onSample(s);
+            }
         });
-        sourceStatus.setText("Recorded %,d samples as %s".formatted(captured, runId));
+        pipeline.setRecording(true);
+        runner.start();
+
+        sourceStatus.setText(commanded
+                ? "Running procedure — driving the antenna switch"
+                : "Running procedure — you will be prompted to switch antennas");
+    }
+
+    /** Bridges runner progress to the UI and persists the finished run. */
+    private final class RunListener implements dev.antennalab.core.run.ExperimentRunner.Listener {
+        private final boolean commanded;
+
+        RunListener(boolean commanded) {
+            this.commanded = commanded;
+        }
+
+        @Override
+        public void onPhase(dev.antennalab.core.run.ExperimentRunner.Phase phase,
+                            AntennaPath target, int blockIndex, int blockCount) {
+            Platform.runLater(() -> sourceStatus.setText(
+                    "Block %d/%d — %s %s".formatted(
+                            blockIndex + 1, blockCount, phase, target.displayName())));
+        }
+
+        @Override
+        public void onProgress(int collected, int target) {
+            Platform.runLater(() -> sampleStatus.setText(
+                    "run: %d/%d in block".formatted(collected, target)));
+        }
+
+        @Override
+        public void onSwitchRequested(AntennaPath to) {
+            // Guided mode. The run does not proceed on this instruction alone --
+            // it still waits for the device to report the new path.
+            Platform.runLater(() -> sourceStatus.setText(
+                    "SWITCH THE ANTENNA TO " + to.displayName().toUpperCase(java.util.Locale.ROOT)
+                            + " — waiting for the device to confirm"));
+        }
+
+        @Override
+        public void onFinished(dev.antennalab.core.run.ExperimentRunner.Outcome outcome) {
+            Platform.runLater(() -> {
+                runner = null;
+                if (pipeline != null) {
+                    pipeline.stop();
+                }
+                setRunningState(false);
+
+                if (outcome.quotable()) {
+                    recordRun(outcome.samples(), "Automated run (%s switching): %s"
+                            .formatted(commanded ? "commanded" : "guided", outcome.note()));
+                } else {
+                    // A void run is still saved -- discarding the evidence for a
+                    // failure would make the failure unauditable -- but it is
+                    // NOT attached to the experiment, so it can never be quoted.
+                    saveVoidRun(outcome);
+                }
+            });
+        }
+    }
+
+    /**
+     * Persist a run that failed its own validity checks, without attaching it.
+     *
+     * <p>Keeping the data matters: "the baseline drifted 10 dB" is a finding
+     * about the bench, and throwing it away makes the failure unexaminable.
+     * Not attaching it matters more: an experiment must never list a run whose
+     * numbers it would be wrong to quote.
+     */
+    private void saveVoidRun(dev.antennalab.core.run.ExperimentRunner.Outcome outcome) {
+        if (outcome.samples().isEmpty()) {
+            sourceStatus.setText("Run failed: " + outcome.note());
+            return;
+        }
+        String voidId = "void-" + java.time.Instant.now().toString().replaceAll("[:.]", "-");
+        var meta = new dev.antennalab.core.domain.SessionMetadata(
+                "VOID: " + (activeExperiment != null ? activeExperiment.title() : "run"),
+                0.0, "", dev.antennalab.core.domain.SessionMetadata.CHANNEL_UNKNOWN,
+                "", "Run not quotable: " + outcome.note(), java.time.Instant.now());
+        try {
+            sessionStore.save(new Session(voidId, pipeline.source(), meta, outcome.samples()));
+        } catch (RuntimeException ignored) {
+            // Saving the evidence for a failed run is best-effort; the verdict
+            // below is the part the operator must not miss.
+        }
+        sourceStatus.setText("RUN NOT QUOTABLE — " + outcome.note()
+                + " (data kept as " + voidId + ", not attached)");
     }
 
     private void setRunningState(boolean running) {
