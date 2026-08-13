@@ -17,7 +17,7 @@ moving.
 > myself, and a piece of Java 26 that turns the two of them into an antenna test
 > bench."
 
-Cut to the delta card reading **+12.5 dB**.
+Cut to the delta card — the delta, its confidence interval, and its grade.
 
 > "That number is the whole project."
 
@@ -107,6 +107,6 @@ Back to the bench.
 ## Recording notes
 
 - Run the app maximised at 1920×1080 so the UI text is legible after compression.
-- Use a fresh synthetic seed for B-roll, but **the +12.5 dB claim must be shown
+- Use a fresh synthetic seed for B-roll, but **any measured figure must be shown
   from a real captured session**, not the simulator. The status bar reads
   `SIMULATED` in synthetic mode and that will be on camera.

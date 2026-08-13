@@ -180,7 +180,7 @@ public record AntennaDelta(
         return deltaDb + marginOfErrorDb;
     }
 
-    /** The headline as it appears on the card, e.g. {@code "+12.5 dB"}. */
+    /** The headline as it appears on the card, e.g. {@code "+6.0 dB"}. */
     public String headline() {
         return "%+.1f dB".formatted(deltaDb);
     }

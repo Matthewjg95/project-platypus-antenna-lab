@@ -234,9 +234,9 @@ class LabLibraryTest {
         // Adding the same run twice must not duplicate it.
         assertEquals(1, withRun.withRun("session-1", T0.plusSeconds(90)).runIds().size());
 
-        Experiment done = withRun.concludeWith("Design C led by 12.5 dB", T0.plusSeconds(120));
+        Experiment done = withRun.concludeWith("Design C led on this run", T0.plusSeconds(120));
         assertEquals(Experiment.Status.CONCLUDED, done.status());
-        assertEquals("Design C led by 12.5 dB", done.conclusion());
+        assertEquals("Design C led on this run", done.conclusion());
 
         // The original is untouched -- records are immutable.
         assertEquals(Experiment.Status.PLANNED, e.status());
@@ -251,12 +251,12 @@ class LabLibraryTest {
     }
 
     @Test
-    @DisplayName("the headline experiment ships unconcluded, with the +12.5 dB unclaimed")
+    @DisplayName("the headline experiment ships unconcluded, claiming no gain figure")
     void headlineExperimentMakesNoClaimYet() {
         Experiment e = PlatypusCatalog.headlineExperiment(T0);
 
-        // The measurement predates this software. Until a run is imported, the
-        // app has no basis for asserting the figure.
+        // The project has no characterised gain. Until a run under this
+        // procedure produces one, the app asserts nothing.
         assertEquals(Experiment.Status.PLANNED, e.status());
         assertTrue(e.conclusion().isEmpty());
         assertTrue(e.dutIds().contains(PlatypusCatalog.DESIGN_C_ID));
@@ -273,12 +273,15 @@ class LabLibraryTest {
     }
 
     @Test
-    @DisplayName("Design C is recorded as the source of the published headline figure")
-    void designCCarriesTheHeadline() {
-        // IMG_8025 shows Design A mounted on the Tab5, but the README attributes
-        // the +12.5 dB to Design C. Recording which design the claim belongs to is
-        // the difference between a result and an anecdote.
-        assertTrue(PlatypusCatalog.designC().notes().contains("+12.5 dB"));
-        assertFalse(PlatypusCatalog.designA().notes().contains("+12.5 dB"));
+    @DisplayName("no seeded DUT carries an unearned gain claim")
+    void noDutClaimsAGainFigure() {
+        // An early measurement produced an anomalously high delta and was
+        // excluded pending repeatability, so nothing in the catalogue quotes a
+        // gain. The seeded library must state geometry, not results.
+        for (Dut dut : List.of(PlatypusCatalog.designA(), PlatypusCatalog.designB(),
+                PlatypusCatalog.designC(), PlatypusCatalog.chipAntenna())) {
+            assertFalse(dut.notes().matches("(?s).*[+-]?\\d+(\\.\\d+)?\\s*dB (result|over|gain).*"),
+                    dut.id() + " should not quote a gain figure: " + dut.notes());
+        }
     }
 }

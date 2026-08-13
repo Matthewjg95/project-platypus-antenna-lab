@@ -20,13 +20,14 @@ the 915 MHz Meshtastic work and whatever comes after it.
 
 The antennas under test are the [Project Platypus](docs/HACKSTER.md) Rev 7.13.1
 patches: three designs on one panel, differing only in how the patch is matched
-to the feed. Design C (quarter-wave transformer) measured **+12.5 dB** over the
-chip antenna.
+to the feed. Design C is the quarter-wave transformer variant. Gain vs the chip
+antenna is not yet characterised: an early measurement produced an anomalously
+high delta and was excluded from conclusions pending repeatability.
 
-> **Status: day 2 of 10.** Live scope works end to end on the synthetic source;
-> the lab library is complete and tested. Serial capture and CSV import are
-> deliberately unimplemented — see
-> [Deliberately not implemented yet](#deliberately-not-implemented-yet).
+> **Status.** Live serial capture, auto-detection, the experiment library,
+> session persistence, automated procedure runs and HTML report export all work.
+> CSV import is built and tested but not yet surfaced in the UI — the firmware's
+> CSV layout has not been captured, so nothing is wired to a guess.
 
 ---
 
@@ -239,7 +240,7 @@ move, because losing the experiment record is worse than losing a session.
 ### The delta, and its error bars
 
 The headline figure is `mean(external) − mean(chip)` in the dB domain, which is
-what "12.5 dB better" conventionally means and what antenna datasheets quote.
+what "N dB better" conventionally means and what antenna datasheets quote.
 
 It never travels without its qualification. Every delta carries a 95% confidence
 interval and a grade:
@@ -269,8 +270,8 @@ same confident green as a strong one.
 Per the Platypus README: return loss is not signal loss. Even Design B's
 deliberate 97 Ω mismatch costs well under 2 dB of delivered power — inside the
 noise floor above. So an over-the-air RSSI comparison is **not** expected to
-separate designs A, B and C; the +12.5 dB comes from directivity and from
-escaping the host enclosure, not from matching finesse. Ranking the three
+separate designs A, B and C; whatever advantage a patch shows comes from
+directivity and from escaping the host enclosure, not from matching finesse. Ranking the three
 matching approaches needs an S11 sweep on a VNA.
 
 That limitation is recorded in the code rather than left for a reader to

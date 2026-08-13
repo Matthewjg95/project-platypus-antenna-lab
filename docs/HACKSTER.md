@@ -11,10 +11,9 @@
 
 ## The one-sentence version
 
-Antenna Lab is a Java 26 desktop instrument that drives an ESP32-C6 dev board,
-streams RSSI from two switchable antenna paths, and turns the comparison into a
-number you can defend: **+12.5 dB** for a hand-made microstrip patch over the
-module's chip antenna.
+Antenna Lab is a Java 26 pipeline for a hand-built RF instrument: it drives the
+device's antenna switch, collects balanced A/B blocks, and turns the comparison
+into a number with error bars — or refuses to give you one.
 
 And then it does the part that actually matters — it *keeps the record*: which
 antenna, built to which geometry, measured under which procedure, and what that
@@ -57,7 +56,7 @@ not merely possible.
 | Antenna under test | Project Platypus patch, Rev 7.13.1 |
 | Antenna type | 2.4 GHz microstrip patch, three matching variants on one panel |
 | Reference | ESP32-C6-MINI-1U on-module chip antenna |
-| Measured result | **+12.5 dB** over the chip antenna (Design C) |
+| Gain vs chip antenna | not yet characterised (early measurement excluded pending repeatability) |
 | Link | USB serial, streaming RSSI; firmware also logs CSV |
 
 ### Three designs, one fab run
@@ -88,11 +87,13 @@ rate adaptation — largely cancels.
 <!-- TODO: measurement conditions for the headline figure — distance, orientation,
      channel, number of samples, and what the far end of the link was. -->
 
-### About the +12.5 dB
+### About the gain figure
 
-<!-- TODO: describe how this was measured, and over how many samples. The app now
-     computes a 95% confidence interval for exactly this figure; once a real
-     capture is imported, quote the interval here rather than the bare number. -->
+The project does not have one yet. An early measurement produced an anomalously
+high delta and was excluded from conclusions pending repeatability.
+
+<!-- TODO: once a run completes under the automated procedure, quote the delta
+     WITH its confidence interval and sample counts — never the bare number. -->
 
 ---
 
@@ -253,7 +254,7 @@ changed, in the one file whose whole purpose is a readable history.
 ### Averaging in the dB domain
 
 dBm is logarithmic, so the arithmetic mean of dBm readings is not the linear-power
-mean. Antenna Lab reports the dB-domain mean, because that is what "12.5 dB
+mean. Antenna Lab reports the dB-domain mean, because that is what "N dB
 better" conventionally means and what antenna datasheets quote — the figure stays
 directly comparable to how the original bench result was expressed. The choice is
 documented in the code rather than left implicit.
@@ -292,7 +293,7 @@ return ratio >= 2.0 ? Confidence.STRONG : Confidence.MODERATE;
 The Platypus README is blunt about something an enthusiastic demo would gloss
 over: **return loss is not signal loss.** Even Design B's deliberate 97 Ω feed
 point costs well under 2 dB of delivered power — inside the noise floor above. So
-an over-the-air RSSI comparison cannot rank A against B against C. The +12.5 dB
+an over-the-air RSSI comparison cannot rank A against B against C. Any advantage
 comes from directivity and from escaping the host enclosure, not from matching
 finesse; separating the three matching approaches needs an S11 sweep on a VNA.
 
@@ -314,11 +315,11 @@ silkscreen photograph — a 3.3 mm slot, an 18.0 mm transformer, a `-001`
 connector — were wrong against the design document (6.3 mm, 17.98 mm, `-801`).
 Photographs are evidence of what a board *looks like*, not of what it *is*.
 
-### The published headline is not like-for-like, and the software says so
+### The project's only gain number was withdrawn, and the software says so
 
-The +12.5 dB is quoted as −40.5 dBm chip **average** against −28.0 dBm patch
-**best**. An average against a best case is not a comparison, and it is the most
-attackable number in this project.
+An early measurement produced an anomalously high delta. It compared an average
+against a best case — not a like-for-like comparison — and it was a single
+informal test. It has been excluded from conclusions pending repeatability.
 
 The library therefore ships that experiment `PLANNED`, with an empty conclusion.
 The measurement predates the software; until a run is captured under a recorded
@@ -349,7 +350,7 @@ imply precision the data lacks.
 ### Simulated data is watermarked
 
 The synthetic source exists so the app demos without hardware. It also creates an
-obvious hazard: a modelled "+12.5 dB" looks identical to a measured one. So
+obvious hazard: a modelled gain figure looks identical to a measured one. So
 `Source.isLiveHardware()` travels with every session, the status bar reads
 **SIMULATED — not measured data**, and reports state provenance. The demo can
 never be mistaken for evidence.

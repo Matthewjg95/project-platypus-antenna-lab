@@ -124,7 +124,7 @@ class AntennaDeltaTest {
     }
 
     @Test
-    @DisplayName("the 12.5 dB headline is comfortably above the instrument floor")
+    @DisplayName("a large separation is comfortably above the instrument floor")
     void headlineMagnitudeIsResolvable() {
         TraceStats chip = TraceStats.ofValues(series(61, -40.5, 2.2, 400));
         TraceStats external = TraceStats.ofValues(series(62, -28.0, 2.2, 400));

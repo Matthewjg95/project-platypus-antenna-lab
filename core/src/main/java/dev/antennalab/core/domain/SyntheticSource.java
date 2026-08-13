@@ -31,10 +31,14 @@ public record SyntheticSource(
         int samplesPerSecond) implements Source {
 
     /**
-     * Measured advantage of the Project Platypus patch (Rev 7.13) over the
-     * ESP32-C6-MINI-1U chip antenna, from the real bench run.
+     * Default modelled gain for the demo source, in dB.
+     *
+     * <p>A plausible patch-vs-chip figure for driving the synthetic scope -- NOT
+     * a measurement. The project has no characterised gain yet: an early
+     * measurement produced an anomalously high delta and was excluded pending
+     * repeatability.
      */
-    public static final double PLATYPUS_MEASURED_GAIN_DB = 12.5;
+    public static final double DEMO_GAIN_DB = 12.5;
 
     /** A typical mid-room chip-antenna reading at a couple of metres. */
     public static final double DEFAULT_CHIP_MEAN_DBM = -62.0;
@@ -67,7 +71,7 @@ public record SyntheticSource(
         return new SyntheticSource(
                 42L,
                 DEFAULT_CHIP_MEAN_DBM,
-                PLATYPUS_MEASURED_GAIN_DB,
+                DEMO_GAIN_DB,
                 DEFAULT_NOISE_STDDEV_DB,
                 DEFAULT_SAMPLES_PER_SECOND);
     }
@@ -77,7 +81,7 @@ public record SyntheticSource(
         return new SyntheticSource(
                 seed,
                 DEFAULT_CHIP_MEAN_DBM,
-                PLATYPUS_MEASURED_GAIN_DB,
+                DEMO_GAIN_DB,
                 DEFAULT_NOISE_STDDEV_DB,
                 DEFAULT_SAMPLES_PER_SECOND);
     }

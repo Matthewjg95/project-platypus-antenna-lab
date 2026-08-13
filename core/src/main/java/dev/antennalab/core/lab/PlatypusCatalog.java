@@ -20,8 +20,8 @@ import java.util.List;
  * <p><b>What RSSI can and cannot settle.</b> The project's README is explicit
  * that return loss is not signal loss -- even B's 97 ohm feed point costs well
  * under 2 dB of delivered power. So an RSSI A/B/C comparison is not expected to
- * separate the three designs by much; the +12.5 dB headline comes from
- * directivity and from escaping the host enclosure, not from matching finesse.
+ * separate the three designs by much; whatever advantage a patch shows comes
+ * from directivity and from escaping the host enclosure, not matching finesse.
  * Separating A from B from C needs an S11 sweep. This is recorded here so the
  * software does not invite a conclusion the measurement cannot support.
  */
@@ -119,9 +119,8 @@ public final class PlatypusCatalog {
                 "C",
                 new FeedDesign.QuarterWaveTransformer(100.0, 0.709, 17.98),
                 CONNECTOR,
-                "Quarter-wave transformer, no notch. Zt = sqrt(50*200) = 100 ohm. The design "
-                        + "behind the published +12.5 dB result. " + PATCH_GEOMETRY + ". "
-                        + SUBSTRATE);
+                "Quarter-wave transformer, no notch. Zt = sqrt(50*200) = 100 ohm. "
+                        + PATCH_GEOMETRY + ". " + SUBSTRATE);
     }
 
     /** The on-module chip antenna used as the reference path. */
@@ -210,12 +209,11 @@ public final class PlatypusCatalog {
     /**
      * The headline experiment this project exists to answer.
      *
-     * <p>Left PLANNED with no conclusion deliberately. The published +12.5 dB was
-     * measured before this software existed, and its own README quotes it as
-     * -40.5 dBm chip <em>average</em> against -28.0 dBm patch <em>best</em> --
-     * an average against a best case, which is not a like-for-like comparison.
-     * Reproducing it under this procedure, with both figures computed the same
-     * way, is exactly what the application is for.
+     * <p>Left PLANNED with no conclusion deliberately: the project has no
+     * characterised gain figure. An early measurement produced an anomalously
+     * high delta and was excluded from conclusions pending repeatability.
+     * Establishing the number under this procedure is what the application is
+     * for.
      */
     public static Experiment headlineExperiment(Instant now) {
         return Experiment.plan(

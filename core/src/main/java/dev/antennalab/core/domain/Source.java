@@ -30,7 +30,7 @@ public sealed interface Source permits SerialSource, ReplaySource, SyntheticSour
     /**
      * Whether this source involves physical hardware.
      *
-     * <p>Reports need to state this plainly: a headline "+12.5 dB" measured from
+     * <p>Reports need to state this plainly: a headline gain figure measured from
      * a synthetic source is a demo, not evidence, and the report generator marks
      * it as such rather than letting the two look alike.
      */

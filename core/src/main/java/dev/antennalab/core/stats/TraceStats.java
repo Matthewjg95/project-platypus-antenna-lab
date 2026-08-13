@@ -37,7 +37,7 @@ public record TraceStats(
      * linear milliwatts, averaging, and converting back. The linear mean is
      * dominated by the strongest readings; the dB-domain mean is what bench
      * instruments and antenna datasheets report, and it is what "this antenna is
-     * 12.5 dB better" conventionally means. We use the dB-domain mean, so the
+     * N dB better" conventionally means. We use the dB-domain mean, so the
      * headline figure is directly comparable to the way the hardware result was
      * originally quoted.
      *

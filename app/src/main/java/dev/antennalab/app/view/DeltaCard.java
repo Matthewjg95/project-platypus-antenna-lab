@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
  * The headline card: delta dB between the two antennas, with its qualification.
  *
  * <p>The confidence grade is never optional here. The whole point of the project
- * is a defensible "+12.5 dB", and a big number with no error bar is the one way
+ * is a defensible gain figure, and a big number with no error bar is the one way
  * this UI could actively mislead its own author.
  */
 public final class DeltaCard extends VBox {

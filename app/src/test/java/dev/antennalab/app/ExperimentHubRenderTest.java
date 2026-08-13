@@ -96,7 +96,7 @@ class ExperimentHubRenderTest {
                 .withRun("run-1", now));
         library.put(Experiment.plan("st-concluded", "Concluded", "Does it work?", "", java.util.List.of(), now)
                 .withRun("run-1", now)
-                .concludeWith("Yes, by 12.5 dB.", now));
+                .concludeWith("Yes, on this run.", now));
         library.put(Experiment.plan("st-abandoned", "Abandoned", "Does it work?", "", java.util.List.of(), now)
                 .abandon("Bench unavailable.", now));
         library.save();
