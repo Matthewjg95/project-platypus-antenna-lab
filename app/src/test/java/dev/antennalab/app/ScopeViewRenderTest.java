@@ -160,7 +160,7 @@ class ScopeViewRenderTest {
         double externalMeanY = externalSumY / externalN;
 
         assertTrue(externalMeanY < chipMeanY,
-                "external trace (+12.5 dB) should render above chip; "
+                "the higher-RSSI trace should render above the lower one; "
                         + "external meanY=" + externalMeanY + " chip meanY=" + chipMeanY);
     }
 
