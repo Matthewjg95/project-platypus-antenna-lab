@@ -425,6 +425,15 @@ The app starts in synthetic mode, so it runs with no board attached.
   depend on a cloud.
 - **An S11 sweep on a VNA** — the measurement this rig honestly cannot make,
   and the only way to rank the three matching designs.
+- **Bench instruments over SCPI** — every modern oscilloscope, VNA and spectrum
+  analyser speaks SCPI over USB or LXI, and the screenshots-onto-a-flash-drive
+  ritual at real test benches is two commands (`:DISPlay:DATA?`,
+  `:WAVeform:DATA?`) that nobody wired up. The Tab5 is just this app's first
+  instrument: a `ScpiSource` slots into the same sealed hierarchy, the compiler
+  names every switch that needs the new case, and captures land in the same
+  session store with `*IDN?` as provenance instead of anonymous PNGs on a
+  stick. Built against a real instrument when one is on the bench, per the
+  house rule about parsers and guesses.
 
 ---
 
