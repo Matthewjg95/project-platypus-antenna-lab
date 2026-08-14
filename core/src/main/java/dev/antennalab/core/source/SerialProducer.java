@@ -79,14 +79,12 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
         byte[] buffer = new byte[4096];
         long sequence = 0;
 
+        // The raw log is opened lazily, on the first bytes that actually arrive.
+        // Opening it eagerly littered ~/AntennaLab/raw with empty files during
+        // reconnect storms -- each failed attempt minted a log for a link that
+        // never produced anything, burying the one file that mattered.
         RawCaptureLog raw = null;
-        try {
-            raw = new RawCaptureLog(RAW_DIR, spec.portName());
-        } catch (IOException e) {
-            // Proceed without a log rather than refusing to capture. describe()
-            // does not advertise a file that does not exist.
-        }
-        rawLog = raw;
+        boolean rawGaveUp = false;
 
         try {
             while (!closed && !Thread.currentThread().isInterrupted()) {
@@ -101,6 +99,16 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
                 }
                 if (n == 0) {
                     continue; // quiet interval; loop to re-check interrupt/closed
+                }
+                if (raw == null && !rawGaveUp) {
+                    try {
+                        raw = new RawCaptureLog(RAW_DIR, spec.portName());
+                        rawLog = raw;
+                    } catch (IOException e) {
+                        // Capture without a log rather than not at all; do not
+                        // retry every chunk against a broken directory.
+                        rawGaveUp = true;
+                    }
                 }
                 if (raw != null) {
                     // Before parsing, so the log holds what the device actually

@@ -79,7 +79,13 @@ public final class AntennaLabApp extends Application {
     private ExperimentHubView hub;
 
     /** Non-null while an automated procedure run is in flight. */
-    private dev.antennalab.core.run.ExperimentRunner runner;
+    private volatile dev.antennalab.core.run.ExperimentRunner runner;
+
+    /** Set when a runner is armed but waiting for the first sample to start. */
+    private volatile boolean runnerStartPending;
+
+    /** One runner tap per pipeline; reset when a new pipeline is built. */
+    private boolean runnerTapAttached;
     private TabPane tabs;
     private Tab scopeTab;
 
@@ -345,6 +351,8 @@ public final class AntennaLabApp extends Application {
         runProgress.dismiss();
 
         pipeline = new CapturePipeline(source, new UiCaptureListener());
+        runnerTapAttached = false;
+        runnerStartPending = false;
         pipeline.setRecording(true);
         pipeline.start();
 
@@ -396,7 +404,25 @@ public final class AntennaLabApp extends Application {
         if (activeExperiment == null || pipeline == null) {
             return;
         }
-        recordRun(pipeline.recordedSamples(), null);
+        var samples = pipeline.recordedSamples();
+        // A comparison experiment cannot be evidenced by one antenna. This
+        // guard exists because it happened: a failed run start left the
+        // experiment active, a plain capture followed, and Stop attached 46
+        // chip-only samples as a "run" of an A/B experiment. The session is
+        // still worth saving -- data is data -- but attaching it would let the
+        // experiment claim evidence it does not have.
+        boolean chip = samples.stream().anyMatch(s -> s.antenna() == AntennaPath.CHIP);
+        boolean external = samples.stream().anyMatch(s -> s.antenna() == AntennaPath.EXTERNAL);
+        if (!chip || !external) {
+            String have = chip ? "chip only" : external ? "external only" : "no";
+            Experiment was = activeExperiment;
+            activeExperiment = null;
+            recordRun(samples, "Single-path capture (" + have + " samples); "
+                    + "not attached to '" + was.title() + "' — an A/B experiment "
+                    + "needs both antennas");
+            return;
+        }
+        recordRun(samples, null);
     }
 
     /**
@@ -480,13 +506,13 @@ public final class AntennaLabApp extends Application {
         runner = new dev.antennalab.core.run.ExperimentRunner(
                 plan, pipeline.commands(), new RunListener(commanded, false));
         runProgress.beginRun(plan, false);
+        runnerStartPending = true;
         attachRunnerTap();
         pipeline.setRecording(true);
-        runner.start();
 
         sourceStatus.setText(commanded
-                ? "Running procedure — driving the antenna switch"
-                : "Running procedure — you will be prompted to switch antennas");
+                ? "Run armed — starts on the first sample from the instrument"
+                : "Run armed — you will be prompted to switch antennas");
     }
 
     /**
@@ -513,14 +539,14 @@ public final class AntennaLabApp extends Application {
         runner = dev.antennalab.core.run.ExperimentRunner.quickCheck(
                 pipeline.commands(), new RunListener(commanded, true));
         runProgress.beginRun(runner.plan(), true);
+        runnerStartPending = true;
         attachRunnerTap();
         // Deliberately NOT recording: a wiring check is not evidence, and a
         // session full of it would be clutter in the library.
-        runner.start();
 
         sourceStatus.setText(commanded
-                ? "Quick check — commanding both antennas, about 30 seconds"
-                : "Quick check — you will be prompted to switch antennas");
+                ? "Quick check armed — starts on the first sample, about 30 seconds"
+                : "Quick check armed — you will be prompted to switch antennas");
     }
 
     /**
@@ -528,11 +554,33 @@ public final class AntennaLabApp extends Application {
      *
      * <p>The tap delivers samples on the pipeline's own thread; the runner is a
      * pure state machine, so it runs there and only the UI hops to JavaFX.
+     *
+     * <p><b>The runner is started from here, on the first sample</b> — not from
+     * the button handler. Starting it eagerly sent the first antenna command
+     * into a port that was still opening (or mid-reconnect), which killed the
+     * run instantly with "could not command". The first sample is proof the
+     * link is up; it is also what arms the runner's switch-timeout clock, so a
+     * silent instrument can no longer leave a run waiting forever.
+     *
+     * <p>One tap per pipeline, guarded: a pipeline that outlives several runs
+     * (Start, then Run) must not accumulate taps, or each sample would be
+     * delivered to the runner once per accumulated tap.
      */
     private void attachRunnerTap() {
+        if (runnerTapAttached) {
+            return;
+        }
+        runnerTapAttached = true;
         pipeline.addSampleTap(s -> {
             var active = runner;
-            if (active != null && !active.isFinished()) {
+            if (active == null) {
+                return;
+            }
+            if (runnerStartPending) {
+                runnerStartPending = false;
+                active.start();
+            }
+            if (!active.isFinished()) {
                 active.onSample(s);
             }
         });
@@ -604,6 +652,10 @@ public final class AntennaLabApp extends Application {
                     // failure would make the failure unauditable -- but it is
                     // NOT attached to the experiment, so it can never be quoted.
                     saveVoidRun(outcome);
+                    // And the experiment is released. Leaving it active after a
+                    // failed run is how a later manual Stop attached unrelated
+                    // capture data as this experiment's evidence.
+                    activeExperiment = null;
                 }
             });
         }
