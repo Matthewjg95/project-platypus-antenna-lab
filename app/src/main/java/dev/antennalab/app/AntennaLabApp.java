@@ -669,6 +669,29 @@ public final class AntennaLabApp extends Application {
         }
 
         @Override
+        public void onConnectionLost(String reason, int attempt, int maxAttempts) {
+            Platform.runLater(() -> {
+                // Deliberately not styled as a failure: the capture is still
+                // alive and every sample so far is still held. Saying "failed"
+                // here would invite the operator to give up on a run that is
+                // about to continue.
+                sourceStatus.setText("Device lost (%s) — reconnecting, attempt %d of %d"
+                        .formatted(reason, attempt, maxAttempts));
+                provenanceStatus.setText("LIVE - link dropped, retrying");
+            });
+        }
+
+        @Override
+        public void onReconnected(int attempts) {
+            Platform.runLater(() -> {
+                sourceStatus.setText(attempts <= 1
+                        ? "Reconnected — capture continues"
+                        : "Reconnected after %d attempts — capture continues".formatted(attempts));
+                provenanceStatus.setText("LIVE - measured on hardware");
+            });
+        }
+
+        @Override
         public void onCancelled() {
             Platform.runLater(() -> {
                 sourceStatus.setText("Stopped");

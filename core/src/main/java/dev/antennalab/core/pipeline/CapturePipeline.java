@@ -127,6 +127,27 @@ public final class CapturePipeline implements AutoCloseable {
         this.buffer = new RollingBuffer(windowSamples);
     }
 
+    /**
+     * Passes link loss and recovery out to the capture listener.
+     *
+     * <p>The reconnect policy lives in the producer, which knows what a dropped
+     * link means; the pipeline only relays it, so the UI has one listener to
+     * implement rather than two.
+     */
+    private final class ReconnectListener
+            implements dev.antennalab.core.source.ReconnectingProducer.Listener {
+
+        @Override
+        public void onConnectionLost(String reason, int attempt, int maxAttempts) {
+            listener.onConnectionLost(reason, attempt, maxAttempts);
+        }
+
+        @Override
+        public void onReconnected(int attempt) {
+            listener.onReconnected(attempt);
+        }
+    }
+
     /** Begin capturing. Returns immediately; the work happens on virtual threads. */
     public void start() {
         if (!running.compareAndSet(false, true)) {
@@ -147,7 +168,7 @@ public final class CapturePipeline implements AutoCloseable {
         try {
             SampleProducer prod = injectedProducer != null
                     ? injectedProducer
-                    : Producers.forSource(source);
+                    : Producers.forSource(source, new ReconnectListener());
             producer = prod;
 
             // Both resources close in reverse order on exit. The scope closing

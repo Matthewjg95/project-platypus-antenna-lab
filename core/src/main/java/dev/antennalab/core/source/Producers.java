@@ -27,6 +27,18 @@ public final class Producers {
      *         has not been pinned down yet -- see the note on each case.
      */
     public static SampleProducer forSource(Source source) {
+        return forSource(source, new ReconnectingProducer.Listener() {
+        });
+    }
+
+    /**
+     * Open a producer, reporting link loss and recovery to {@code listener}.
+     *
+     * <p>Only serial sources can lose a link, so the listener is ignored for the
+     * others rather than being made part of every source's contract.
+     */
+    public static SampleProducer forSource(Source source,
+                                           ReconnectingProducer.Listener listener) {
         if (source == null) {
             throw new IllegalArgumentException("source is required");
         }
@@ -34,9 +46,10 @@ public final class Producers {
             case SyntheticSource spec -> new SyntheticProducer(spec);
 
             // Implemented against the real capture of 2026-08-08 (see
-            // Tab5LogParser and its fixture). The long-standing deliberate
-            // UnsupportedOperationException is finally gone.
-            case SerialSource spec -> new SerialProducer(spec);
+            // Tab5LogParser and its fixture). Wrapped so a firmware reboot --
+            // which this device does, both deliberately and by crashing --
+            // costs a gap in the timeline rather than the whole capture.
+            case SerialSource spec -> ReconnectingProducer.forSerial(spec, listener);
 
             // Same reasoning: the firmware's CSV column layout is not yet known.
             case ReplaySource(var file, var speed) -> throw new UnsupportedOperationException(

@@ -29,6 +29,19 @@ public interface CaptureListener {
     default void onCompleted() {
     }
 
+    /**
+     * The device disappeared; the capture is trying to get it back.
+     *
+     * <p>Not a failure yet. Samples already captured are retained, and
+     * {@link #onFailed} still fires if the retries run out.
+     */
+    default void onConnectionLost(String reason, int attempt, int maxAttempts) {
+    }
+
+    /** Samples are flowing again, {@code attempts} tries after the loss. */
+    default void onReconnected(int attempts) {
+    }
+
     /** The capture stopped because something failed. */
     default void onFailed(Throwable cause) {
     }
