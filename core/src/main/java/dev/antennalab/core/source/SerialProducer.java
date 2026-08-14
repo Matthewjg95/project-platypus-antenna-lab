@@ -27,17 +27,26 @@ import java.time.Instant;
  *
  * <p>Samples are stamped on arrival: the firmware prints no per-sample
  * timestamps, and at its ~1.5–2 s cadence USB latency is noise.
+ *
+ * <p><b>Every byte is also teed to a raw log</b> under {@code ~/AntennaLab/raw}
+ * before parsing — see {@link RawCaptureLog} for why. Best-effort: a capture
+ * without a log is degraded, a capture killed by its log would be absurd.
  */
 public final class SerialProducer implements SampleProducer, CommandChannel {
 
     /** Semi-blocking read window; also the cadence of interrupt/close checks. */
     private static final int READ_TIMEOUT_MS = 500;
 
+    /** Where raw captures land; shared with the session store's root. */
+    private static final java.nio.file.Path RAW_DIR =
+            java.nio.file.Path.of(System.getProperty("user.home"), "AntennaLab", "raw");
+
     private final SerialSource spec;
     private final Tab5LogParser parser = new Tab5LogParser();
 
     private volatile SerialPort port;
     private volatile boolean closed;
+    private volatile RawCaptureLog rawLog;
 
     public SerialProducer(SerialSource spec) {
         if (spec == null) {
@@ -70,6 +79,15 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
         byte[] buffer = new byte[4096];
         long sequence = 0;
 
+        RawCaptureLog raw = null;
+        try {
+            raw = new RawCaptureLog(RAW_DIR, spec.portName());
+        } catch (IOException e) {
+            // Proceed without a log rather than refusing to capture. describe()
+            // does not advertise a file that does not exist.
+        }
+        rawLog = raw;
+
         try {
             while (!closed && !Thread.currentThread().isInterrupted()) {
                 int n = p.readBytes(buffer, buffer.length);
@@ -84,6 +102,12 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
                 if (n == 0) {
                     continue; // quiet interval; loop to re-check interrupt/closed
                 }
+                if (raw != null) {
+                    // Before parsing, so the log holds what the device actually
+                    // sent -- including anything the parser would ignore, which
+                    // in a crash is precisely the interesting part.
+                    raw.append(buffer, n);
+                }
                 String chunk = new String(buffer, 0, n, StandardCharsets.UTF_8);
                 Instant now = Instant.now();
                 for (Tab5LogParser.Reading reading : parser.feed(chunk)) {
@@ -94,6 +118,9 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
                 throw new InterruptedException("serial capture cancelled");
             }
         } finally {
+            if (raw != null) {
+                raw.close();
+            }
             if (p.isOpen()) {
                 p.closePort();
             }
@@ -102,9 +129,14 @@ public final class SerialProducer implements SampleProducer, CommandChannel {
 
     @Override
     public String describe() {
-        return "Serial %s @ %d baud (%d lines seen, %d ignored)"
+        RawCaptureLog raw = rawLog;
+        String rawNote = raw == null ? ""
+                : raw.failure() != null
+                        ? " [raw log FAILED: " + raw.failure().getMessage() + "]"
+                        : " [raw: " + raw.file().getFileName() + "]";
+        return "Serial %s @ %d baud (%d lines seen, %d ignored)%s"
                 .formatted(spec.portName(), spec.baudRate(),
-                        parser.linesSeen(), parser.linesIgnored());
+                        parser.linesSeen(), parser.linesIgnored(), rawNote);
     }
 
     @Override
