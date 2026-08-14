@@ -148,9 +148,11 @@ final class ExperimentDialogs {
                 return null;
             }
             List<String> dutIds = new ArrayList<>();
+            List<Dut> selectedDuts = new ArrayList<>();
             dutChoices.forEach((box, dut) -> {
                 if (box.isSelected()) {
                     dutIds.add(dut.id());
+                    selectedDuts.add(dut);
                 }
             });
             Procedure chosen = procedure.getSelectionModel().getSelectedItem();
@@ -165,7 +167,7 @@ final class ExperimentDialogs {
                     chosen == null ? "" : chosen.id(),
                     dutIds,
                     now)
-                    .withMilestones(dev.antennalab.core.lab.Milestone.templateFrom(chosen), now);
+                    .withMilestones(dev.antennalab.core.lab.Milestone.templateFor(chosen, selectedDuts), now);
         });
 
         return Optional.ofNullable(dialog.showAndWait().orElse(null));

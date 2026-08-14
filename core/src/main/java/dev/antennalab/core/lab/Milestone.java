@@ -38,26 +38,33 @@ public record Milestone(String label, boolean done) {
     }
 
     /**
-     * Derive the milestone template from a procedure's steps.
+     * Build an experiment's checklist: one milestone per device under test,
+     * plus the conclusion.
      *
-     * <p>Each step's {@code verification} is already "how you know this was
-     * done right" — which is precisely a checklist item. Steps whose
-     * verification is empty fall back to the instruction itself. The procedure
-     * needs no new field: the template is a reading of what it already says.
+     * <p>A first version mined the procedure's step verifications instead. On
+     * the bench that produced boxes describing the <em>method's hygiene</em>
+     * ("median of 10, not a single reading") — several of which did not even
+     * apply to an automated run — when what the operator actually resumes
+     * against is the <em>question's progress</em>: which antennas have been
+     * through the test, and has an answer been written. Matt's formulation.
+     * The method's own hygiene stays visible as the procedure's reference
+     * steps; it does not need tick boxes to be read.
+     *
+     * @param procedure the method the runs will follow; may be null.
+     * @param duts      the devices under test, in presentation order.
      */
-    public static List<Milestone> templateFrom(Procedure procedure) {
-        if (procedure == null) {
-            return List.of();
-        }
+    public static List<Milestone> templateFor(Procedure procedure, List<Dut> duts) {
         List<Milestone> out = new ArrayList<>();
-        for (Procedure.Step step : procedure.steps()) {
-            String label = step.verification().isEmpty()
-                    ? step.instruction()
-                    : step.verification();
-            out.add(new Milestone(label, false));
+        String method = procedure == null ? "the procedure" : procedure.name();
+        if (duts != null) {
+            for (Dut dut : duts) {
+                out.add(new Milestone("Run " + method + " against " + dut.name(), false));
+            }
         }
+        out.add(new Milestone("Conclusion recorded against the question", false));
         return List.copyOf(out);
     }
+
 
     public Json toJson() {
         return Json.object()

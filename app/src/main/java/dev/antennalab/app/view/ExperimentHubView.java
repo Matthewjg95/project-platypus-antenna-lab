@@ -204,10 +204,16 @@ public final class ExperimentHubView extends BorderPane {
             // procedure) have none. Offer the copy explicitly rather than
             // mutating a record just because it was looked at.
             library.procedure(experiment.procedureId()).ifPresent(procedure -> {
-                Button adopt = new Button("Add checklist from procedure");
+                Button adopt = new Button("Add checklist");
                 adopt.setOnAction(e -> {
+                    // One box per DUT plus the conclusion -- progress against
+                    // the question, resolved from the experiment's own DUT list.
+                    List<Dut> duts = experiment.dutIds().stream()
+                            .map(library::dut)
+                            .flatMap(java.util.Optional::stream)
+                            .toList();
                     library.put(experiment.withMilestones(
-                            dev.antennalab.core.lab.Milestone.templateFrom(procedure),
+                            dev.antennalab.core.lab.Milestone.templateFor(procedure, duts),
                             java.time.Instant.now()));
                     library.save();
                     refresh();

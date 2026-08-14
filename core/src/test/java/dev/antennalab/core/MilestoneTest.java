@@ -27,21 +27,36 @@ class MilestoneTest {
     private static final Instant T0 = Instant.parse("2026-08-14T09:00:00Z");
 
     @Test
-    @DisplayName("the template reads each step's verification, falling back to the instruction")
-    void templateComesFromStepVerifications() {
+    @DisplayName("the template is one box per DUT plus the conclusion — progress, not method hygiene")
+    void templateIsPerDutPlusConclusion() {
         var procedure = PlatypusCatalog.pairedComparisonProcedure();
-        List<Milestone> template = Milestone.templateFrom(procedure);
+        var duts = List.of(PlatypusCatalog.designA(), PlatypusCatalog.designB(),
+                PlatypusCatalog.designC());
 
-        assertEquals(procedure.steps().size(), template.size(),
-                "one box per step");
+        List<Milestone> template = Milestone.templateFor(procedure, duts);
+
+        // One box per antenna under test, then the answer. A first version
+        // mined the procedure's step verifications instead, and on the bench
+        // several of those boxes did not even apply to an automated run.
+        assertEquals(duts.size() + 1, template.size());
         assertTrue(template.stream().noneMatch(Milestone::done),
                 "a fresh template starts fully unticked");
-        for (int i = 0; i < template.size(); i++) {
-            var step = procedure.steps().get(i);
-            String expected = step.verification().isEmpty()
-                    ? step.instruction() : step.verification();
-            assertEquals(expected, template.get(i).label());
+        for (int i = 0; i < duts.size(); i++) {
+            assertTrue(template.get(i).label().contains(duts.get(i).name()),
+                    "each DUT gets a named box: " + template.get(i).label());
+            assertTrue(template.get(i).label().contains(procedure.name()),
+                    "the box names the method the run must follow");
         }
+        assertEquals("Conclusion recorded against the question",
+                template.get(template.size() - 1).label());
+    }
+
+    @Test
+    @DisplayName("no procedure and no DUTs still yields the conclusion box, not an empty list")
+    void degenerateTemplateStillHasTheConclusion() {
+        List<Milestone> template = Milestone.templateFor(null, List.of());
+        assertEquals(1, template.size());
+        assertTrue(template.get(0).label().contains("Conclusion"));
     }
 
     @Test
@@ -49,9 +64,9 @@ class MilestoneTest {
     void ticksDoNotLeakBetweenExperiments() {
         var procedure = PlatypusCatalog.pairedComparisonProcedure();
         var a = Experiment.plan("exp-a", "A", "Q?", procedure.id(), List.of(), T0)
-                .withMilestones(Milestone.templateFrom(procedure), T0);
+                .withMilestones(Milestone.templateFor(procedure, List.of(PlatypusCatalog.designA())), T0);
         var b = Experiment.plan("exp-b", "B", "Q?", procedure.id(), List.of(), T0)
-                .withMilestones(Milestone.templateFrom(procedure), T0);
+                .withMilestones(Milestone.templateFor(procedure, List.of(PlatypusCatalog.designA())), T0);
 
         var aTicked = a.withMilestoneDone(0, true, T0);
 
@@ -69,7 +84,7 @@ class MilestoneTest {
         var procedure = PlatypusCatalog.pairedComparisonProcedure();
         var experiment = Experiment
                 .plan("exp-rt", "Round trip", "Q?", procedure.id(), List.of(), T0)
-                .withMilestones(Milestone.templateFrom(procedure), T0)
+                .withMilestones(Milestone.templateFor(procedure, List.of(PlatypusCatalog.designA())), T0)
                 .withMilestoneDone(1, true, T0);
 
         var reread = Experiment.fromJson(
