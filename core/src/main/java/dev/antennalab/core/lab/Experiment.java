@@ -25,6 +25,10 @@ import java.util.List;
  * @param procedureId  the {@link Procedure} followed.
  * @param dutIds       the {@link Dut}s compared, in presentation order.
  * @param runIds       session ids captured under this experiment.
+ * @param milestones   the checklist: copied from the procedure's step
+ *                     verifications at creation, then owned by this experiment.
+ *                     Serves as the resume point after time away and, fully
+ *                     ticked, the confidence gate on the conclusion.
  * @param status       where it has got to.
  * @param conclusion   what was decided. Empty until the status says otherwise.
  * @param createdAt    when the experiment was opened.
@@ -37,6 +41,7 @@ public record Experiment(
         String procedureId,
         List<String> dutIds,
         List<String> runIds,
+        List<Milestone> milestones,
         Status status,
         String conclusion,
         Instant createdAt,
@@ -77,6 +82,7 @@ public record Experiment(
         procedureId = procedureId == null ? "" : procedureId.strip();
         dutIds = List.copyOf(dutIds);
         runIds = List.copyOf(runIds);
+        milestones = milestones == null ? List.of() : List.copyOf(milestones);
         if (status == null) {
             throw new IllegalArgumentException("status is required");
         }
@@ -94,7 +100,7 @@ public record Experiment(
     public static Experiment plan(String id, String title, String question,
                                   String procedureId, List<String> dutIds, Instant now) {
         return new Experiment(id, title, question, procedureId, dutIds, List.of(),
-                Status.PLANNED, "", now, now);
+                List.of(), Status.PLANNED, "", now, now);
     }
 
     /** Attach a captured run, moving to IN_PROGRESS if it was still planned. */
@@ -109,7 +115,7 @@ public record Experiment(
         updated.add(runId);
         Status next = status == Status.PLANNED ? Status.IN_PROGRESS : status;
         return new Experiment(id, title, question, procedureId, dutIds, updated,
-                next, conclusion, createdAt, now);
+                milestones, next, conclusion, createdAt, now);
     }
 
     /** Record a conclusion and close the experiment. */
@@ -118,13 +124,38 @@ public record Experiment(
             throw new IllegalArgumentException("a conclusion cannot be empty");
         }
         return new Experiment(id, title, question, procedureId, dutIds, runIds,
-                Status.CONCLUDED, text, createdAt, now);
+                milestones, Status.CONCLUDED, text, createdAt, now);
     }
 
     /** Abandon without a conclusion; the record is kept deliberately. */
     public Experiment abandon(String reason, Instant now) {
         return new Experiment(id, title, question, procedureId, dutIds, runIds,
-                Status.ABANDONED, reason == null ? "" : reason, createdAt, now);
+                milestones, Status.ABANDONED, reason == null ? "" : reason, createdAt, now);
+    }
+
+    /** The same experiment with its milestone list replaced. */
+    public Experiment withMilestones(List<Milestone> list, Instant now) {
+        return new Experiment(id, title, question, procedureId, dutIds, runIds,
+                list, status, conclusion, createdAt, now);
+    }
+
+    /** Tick or untick one milestone by position. */
+    public Experiment withMilestoneDone(int index, boolean done, Instant now) {
+        if (index < 0 || index >= milestones.size()) {
+            throw new IllegalArgumentException(
+                    "no milestone at index " + index + " (have " + milestones.size() + ")");
+        }
+        if (milestones.get(index).done() == done) {
+            return this;
+        }
+        List<Milestone> updated = new java.util.ArrayList<>(milestones);
+        updated.set(index, updated.get(index).withDone(done));
+        return withMilestones(updated, now);
+    }
+
+    /** True when every milestone is ticked; false when there are none. */
+    public boolean milestonesComplete() {
+        return !milestones.isEmpty() && milestones.stream().allMatch(Milestone::done);
     }
 
     /** True once at least one run has been captured. */
@@ -140,6 +171,8 @@ public record Experiment(
                 .put("procedureId", procedureId)
                 .put("dutIds", Json.array(dutIds.stream().map(Json::of).toList()))
                 .put("runIds", Json.array(runIds.stream().map(Json::of).toList()))
+                .put("milestones", Json.array(milestones.stream()
+                        .map(Milestone::toJson).map(j -> (Json) j).toList()))
                 .put("status", status.name())
                 .put("conclusion", conclusion)
                 .put("createdAt", createdAt.toString())
@@ -164,6 +197,10 @@ public record Experiment(
                 o.strOr("procedureId", ""),
                 o.arrOrEmpty("dutIds").stream().map(j -> ((Json.Str) j).value()).toList(),
                 o.arrOrEmpty("runIds").stream().map(j -> ((Json.Str) j).value()).toList(),
+                // Absent in libraries written before milestones existed; an
+                // empty list is the correct reading of such a file.
+                o.arrOrEmpty("milestones").stream()
+                        .map(j -> Milestone.fromJson((Json.Obj) j)).toList(),
                 status,
                 o.strOr("conclusion", ""),
                 Instant.parse(o.str("createdAt")),

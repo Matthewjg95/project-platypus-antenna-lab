@@ -22,9 +22,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -36,10 +34,11 @@ import java.util.function.Consumer;
  * to answer -- followed by the procedure to follow, the hardware involved, the
  * runs captured so far, and the conclusion if there is one.
  *
- * <p>The procedure is rendered as a working checklist rather than a document.
- * That is deliberate: a protocol you read once and then work from memory is
- * exactly the failure mode that makes hobby RF measurements untrustworthy, and
- * the verification line under each step is the part that usually gets skipped.
+ * <p>The working checklist is the experiment's own <em>milestones</em> —
+ * persisted ticks that survive a restart, serving as the resume point after
+ * time away and the confidence gate on the conclusion. The procedure's steps
+ * render as reference text beneath them: the method, not the to-do list. Tick
+ * state on the shared, versioned procedure would leak between experiments.
  */
 public final class ExperimentHubView extends BorderPane {
 
@@ -47,9 +46,6 @@ public final class ExperimentHubView extends BorderPane {
     private final ObservableList<Experiment> experiments = FXCollections.observableArrayList();
     private final ListView<Experiment> experimentList = new ListView<>(experiments);
     private final VBox detail = new VBox(6);
-
-    /** Steps ticked off in this sitting, keyed "experimentId#ordinal". */
-    private final Set<String> completedSteps = new HashSet<>();
 
     private final Label libraryStatus = new Label();
     private Consumer<Experiment> onCaptureRequested = e -> { };
@@ -188,9 +184,62 @@ public final class ExperimentHubView extends BorderPane {
         }
 
         addDutSection(experiment);
+        addMilestoneSection(experiment);
         addProcedureSection(experiment);
         addRunsSection(experiment);
         addConclusionSection(experiment);
+    }
+
+    /**
+     * The experiment's own checklist: the resume point and the confidence gate.
+     *
+     * <p>Ticks write straight through to the library and are saved immediately,
+     * because a resume point that survives only until the app closes is not a
+     * resume point. This replaced an in-memory set that silently forgot every
+     * tick on restart — the least defensible kind of state to lose.
+     */
+    private void addMilestoneSection(Experiment experiment) {
+        if (experiment.milestones().isEmpty()) {
+            // Experiments created before milestones existed (or without a
+            // procedure) have none. Offer the copy explicitly rather than
+            // mutating a record just because it was looked at.
+            library.procedure(experiment.procedureId()).ifPresent(procedure -> {
+                Button adopt = new Button("Add checklist from procedure");
+                adopt.setOnAction(e -> {
+                    library.put(experiment.withMilestones(
+                            dev.antennalab.core.lab.Milestone.templateFrom(procedure),
+                            java.time.Instant.now()));
+                    library.save();
+                    refresh();
+                });
+                detail.getChildren().addAll(spacer(10), sectionTitle("MILESTONES"), adopt);
+            });
+            return;
+        }
+        detail.getChildren().addAll(spacer(10), sectionTitle("MILESTONES"));
+
+        boolean complete = experiment.milestonesComplete();
+        Label gate = muted(complete
+                ? "All boxes ticked — the conclusion can be trusted to this checklist."
+                : "Unticked boxes are the to-do list; tick them all before trusting a conclusion.");
+        gate.setWrapText(true);
+        detail.getChildren().add(gate);
+
+        for (int i = 0; i < experiment.milestones().size(); i++) {
+            int index = i;
+            var milestone = experiment.milestones().get(i);
+            CheckBox box = new CheckBox(milestone.label());
+            box.setWrapText(true);
+            box.setSelected(milestone.done());
+            box.selectedProperty().addListener((obs, was, is) -> {
+                library.put(experiment.withMilestoneDone(index, is, java.time.Instant.now()));
+                library.save();
+                // Re-render so the gate line and the list row reflect the tick.
+                refresh();
+            });
+            box.setPadding(new Insets(3, 0, 3, 0));
+            detail.getChildren().add(box);
+        }
     }
 
     private void addDutSection(Experiment experiment) {
@@ -233,26 +282,24 @@ public final class ExperimentHubView extends BorderPane {
         }
     }
 
-    /** One procedure step as a tickable row with its verification line beneath. */
+    /**
+     * One procedure step as reference text — the method, not a to-do list.
+     *
+     * <p>These used to be checkboxes backed by an in-memory set, which put tick
+     * state on the shared, versioned procedure and forgot it on every restart.
+     * Tick state now lives on the experiment as milestones; the steps remain
+     * here as the description of how the measurement is made.
+     */
     private VBox stepRow(Experiment experiment, Procedure.Step step) {
-        String key = experiment.id() + "#" + step.ordinal();
-        CheckBox box = new CheckBox("%d. %s".formatted(step.ordinal(), step.instruction()));
-        box.setWrapText(true);
-        box.setSelected(completedSteps.contains(key));
-        box.selectedProperty().addListener((obs, was, is) -> {
-            if (is) {
-                completedSteps.add(key);
-            } else {
-                completedSteps.remove(key);
-            }
-        });
+        Label instruction = new Label("%d. %s".formatted(step.ordinal(), step.instruction()));
+        instruction.setWrapText(true);
 
-        VBox row = new VBox(2, box);
+        VBox row = new VBox(2, instruction);
         if (!step.verification().isEmpty()) {
             Label check = new Label("✓ " + step.verification());
             check.getStyleClass().add("step-verification");
             check.setWrapText(true);
-            check.setPadding(new Insets(0, 0, 0, 24));
+            check.setPadding(new Insets(0, 0, 0, 18));
             row.getChildren().add(check);
         }
         row.setPadding(new Insets(3, 0, 3, 0));

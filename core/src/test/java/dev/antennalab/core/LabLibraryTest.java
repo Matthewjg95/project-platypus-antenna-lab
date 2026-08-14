@@ -246,7 +246,7 @@ class LabLibraryTest {
     @DisplayName("a concluded experiment must carry its conclusion")
     void concludedRequiresConclusion() {
         assertThrows(IllegalArgumentException.class, () -> new Experiment(
-                "e", "T", "Q?", "p", List.of(), List.of(),
+                "e", "T", "Q?", "p", List.of(), List.of(), List.of(),
                 Experiment.Status.CONCLUDED, "", T0, T0));
     }
 

@@ -155,13 +155,17 @@ final class ExperimentDialogs {
             });
             Procedure chosen = procedure.getSelectionModel().getSelectedItem();
             Instant now = Instant.now();
+            // The checklist is copied FROM the procedure ONTO the experiment:
+            // template consistency without shared tick state. From here on the
+            // experiment owns its boxes.
             return Experiment.plan(
                     slugFor(title.getText(), library),
                     title.getText().strip(),
                     question.getText().strip(),
                     chosen == null ? "" : chosen.id(),
                     dutIds,
-                    now);
+                    now)
+                    .withMilestones(dev.antennalab.core.lab.Milestone.templateFrom(chosen), now);
         });
 
         return Optional.ofNullable(dialog.showAndWait().orElse(null));

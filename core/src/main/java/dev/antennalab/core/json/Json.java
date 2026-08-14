@@ -89,6 +89,18 @@ public sealed interface Json {
             };
         }
 
+        /** Optional boolean member. */
+        public boolean boolOr(String key, boolean fallback) {
+            Json v = members.get(key);
+            return switch (v) {
+                case null -> fallback;
+                case Null ignored -> fallback;
+                case Bool b -> b.value();
+                default -> throw new JsonException(
+                        "member '" + key + "' should be a boolean, was " + kindOf(v));
+            };
+        }
+
         /** Required integer member; rejects non-integral values rather than truncating. */
         public int intValue(String key) {
             double d = num(key);
