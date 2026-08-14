@@ -27,6 +27,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -61,6 +62,7 @@ public final class AntennaLabApp extends Application {
     private final Button markerButton = new Button("Marker");
     private final Button clearButton = new Button("Clear");
     private final Button exportButton = new Button("Export report…");
+    private final Button quickCheckButton = new Button("Quick check");
     private final javafx.scene.control.ComboBox<SourceOption> sourceCombo =
             new javafx.scene.control.ComboBox<>();
 
@@ -211,6 +213,11 @@ public final class AntennaLabApp extends Application {
         exportButton.setOnAction(e -> exportReport());
         exportButton.setDisable(true);
 
+        quickCheckButton.setOnAction(e -> startQuickCheck());
+        quickCheckButton.setTooltip(new Tooltip(
+                "Command both antennas and confirm the device reports them back. "
+                        + "About 30 seconds. Proves the rig is wired up; measures nothing."));
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
@@ -218,6 +225,8 @@ public final class AntennaLabApp extends Application {
                 sourceLabel, sourceCombo, rescanButton,
                 new Separator(),
                 startButton, stopButton, pauseButton,
+                new Separator(),
+                quickCheckButton,
                 new Separator(),
                 markerButton, clearButton,
                 new Separator(),
@@ -462,15 +471,8 @@ public final class AntennaLabApp extends Application {
         boolean commanded = pipeline.commands().isPresent();
 
         runner = new dev.antennalab.core.run.ExperimentRunner(
-                plan, pipeline.commands(), new RunListener(commanded));
-        // The tap delivers samples on the pipeline's own thread; the runner is a
-        // pure state machine, so it runs there and only the UI hops to JavaFX.
-        pipeline.addSampleTap(s -> {
-            var active = runner;
-            if (active != null && !active.isFinished()) {
-                active.onSample(s);
-            }
-        });
+                plan, pipeline.commands(), new RunListener(commanded, false));
+        attachRunnerTap();
         pipeline.setRecording(true);
         runner.start();
 
@@ -479,12 +481,62 @@ public final class AntennaLabApp extends Application {
                 : "Running procedure — you will be prompted to switch antennas");
     }
 
+    /**
+     * Run the short wiring check: command both antennas, confirm both, stop.
+     *
+     * <p>This exists because the real procedure takes ten minutes before it tells
+     * you anything, which is the wrong first thing to try on hardware that has
+     * never completed a run. It needs no experiment and records nothing — it
+     * answers "is this rig wired up?", not "which antenna is better".
+     */
+    private void startQuickCheck() {
+        activeExperiment = null;
+        tabs.getSelectionModel().select(scopeTab);
+
+        if (pipeline == null || !pipeline.isRunning()) {
+            startCapture();
+        }
+        if (pipeline == null || !pipeline.isRunning()) {
+            sourceStatus.setText("Cannot run: no capture source is available");
+            return;
+        }
+
+        boolean commanded = pipeline.commands().isPresent();
+        runner = dev.antennalab.core.run.ExperimentRunner.quickCheck(
+                pipeline.commands(), new RunListener(commanded, true));
+        attachRunnerTap();
+        // Deliberately NOT recording: a wiring check is not evidence, and a
+        // session full of it would be clutter in the library.
+        runner.start();
+
+        sourceStatus.setText(commanded
+                ? "Quick check — commanding both antennas, about 30 seconds"
+                : "Quick check — you will be prompted to switch antennas");
+    }
+
+    /**
+     * Feed the pipeline's samples to whatever runner is active.
+     *
+     * <p>The tap delivers samples on the pipeline's own thread; the runner is a
+     * pure state machine, so it runs there and only the UI hops to JavaFX.
+     */
+    private void attachRunnerTap() {
+        pipeline.addSampleTap(s -> {
+            var active = runner;
+            if (active != null && !active.isFinished()) {
+                active.onSample(s);
+            }
+        });
+    }
+
     /** Bridges runner progress to the UI and persists the finished run. */
     private final class RunListener implements dev.antennalab.core.run.ExperimentRunner.Listener {
         private final boolean commanded;
+        private final boolean diagnostic;
 
-        RunListener(boolean commanded) {
+        RunListener(boolean commanded, boolean diagnostic) {
             this.commanded = commanded;
+            this.diagnostic = diagnostic;
         }
 
         @Override
@@ -518,6 +570,14 @@ public final class AntennaLabApp extends Application {
                     pipeline.stop();
                 }
                 setRunningState(false);
+
+                if (diagnostic) {
+                    // The note already says whether the loop worked and, if it
+                    // did, that it measured nothing. Nothing is persisted: a
+                    // wiring check is not evidence about an antenna.
+                    sourceStatus.setText(outcome.note());
+                    return;
+                }
 
                 if (outcome.quotable()) {
                     recordRun(outcome.samples(), "Automated run (%s switching): %s"

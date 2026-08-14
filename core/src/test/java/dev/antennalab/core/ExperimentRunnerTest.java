@@ -351,4 +351,87 @@ class ExperimentRunnerTest {
         assertEquals(collectedAtFinish, box.get().samples().size());
         assertEquals(ExperimentRunner.Phase.FINISHED, runner.phase());
     }
+
+    // ---- quick check ------------------------------------------------------
+
+    /** Build a quick-check runner wired to the fake device. */
+    private static ExperimentRunner quickCheckFor(FakeDevice device,
+                                                  AtomicReference<ExperimentRunner.Outcome> box) {
+        return ExperimentRunner.quickCheck(Optional.ofNullable(device),
+                new ExperimentRunner.Listener() {
+                    @Override
+                    public void onFinished(ExperimentRunner.Outcome outcome) {
+                        box.set(outcome);
+                    }
+                });
+    }
+
+    @Test
+    @DisplayName("the quick check exercises the whole loop in under a minute of bench time")
+    void quickCheckIsActuallyQuick() {
+        FakeDevice device = new FakeDevice();
+        var box = new AtomicReference<ExperimentRunner.Outcome>();
+        ExperimentRunner runner = quickCheckFor(device, box);
+
+        runner.start();
+        Instant t = T0;
+        int ticks = 0;
+        while (!runner.isFinished() && ticks < 500) {
+            AntennaPath live = device.tick();
+            runner.onSample(new RssiSample(ticks, t, live,
+                    live == AntennaPath.CHIP ? -35.0 : -41.0));
+            t = t.plusMillis(1500);
+            ticks++;
+        }
+
+        var outcome = box.get();
+        assertNotNull(outcome, "the quick check must terminate");
+
+        // The whole point is the wall clock. At the firmware's ~1.5 s cadence
+        // this must land well inside a minute, or it is not a quick check and
+        // nobody will reach for it on new hardware.
+        Duration elapsed = Duration.between(T0, t);
+        assertTrue(elapsed.compareTo(Duration.ofSeconds(60)) < 0,
+                "quick check took " + elapsed.toSeconds() + "s of bench time");
+
+        // ...and it must still have proved the thing it exists to prove: both
+        // antennas commanded, both confirmed, samples collected on each.
+        assertEquals(List.of("AI", "AE", "AI"), device.sent);
+        assertTrue(outcome.samples().stream().anyMatch(s -> s.antenna() == AntennaPath.CHIP));
+        assertTrue(outcome.samples().stream().anyMatch(s -> s.antenna() == AntennaPath.EXTERNAL));
+    }
+
+    @Test
+    @DisplayName("a perfect quick check is still not quotable")
+    void quickCheckNeverQuotesAResult() {
+        FakeDevice device = new FakeDevice();
+        var box = new AtomicReference<ExperimentRunner.Outcome>();
+        ExperimentRunner runner = quickCheckFor(device, box);
+
+        // A clean run with a large, stable separation -- the most tempting
+        // possible case, and exactly the one that must not produce a figure.
+        var outcome = drive(runner, device, -35.0, -55.0, 500, box);
+
+        assertTrue(runner.isDiagnostic());
+        assertFalse(outcome.quotable(),
+                "a 4-sample-per-path run must never be quotable: " + outcome.note());
+        assertTrue(outcome.note().contains("not a measurement"), outcome.note());
+    }
+
+    @Test
+    @DisplayName("the quick check still reports a genuine wiring failure")
+    void quickCheckSurfacesRealFailures() {
+        FakeDevice device = new FakeDevice();
+        device.failNextWrite = true;
+        var box = new AtomicReference<ExperimentRunner.Outcome>();
+        ExperimentRunner runner = quickCheckFor(device, box);
+
+        runner.start();
+
+        // Diagnostic runs suppress the *result*, not the diagnosis -- otherwise
+        // the one job of a wiring check would be the thing it cannot report.
+        assertNotNull(box.get(), "a failed command must end the run");
+        assertFalse(box.get().quotable());
+        assertTrue(box.get().note().contains("could not command"), box.get().note());
+    }
 }

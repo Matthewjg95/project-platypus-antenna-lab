@@ -56,6 +56,9 @@ public final class ExperimentRunner {
     /** Samples discarded after a confirmed switch, before collecting resumes. */
     public static final int SETTLE_SAMPLES = 2;
 
+    /** Samples per block in a {@link #quickCheckPlan() quick check}. */
+    public static final int QUICK_CHECK_SAMPLES = 4;
+
     /** How long to wait for the device to confirm a commanded switch. */
     public static final Duration SWITCH_TIMEOUT = Duration.ofSeconds(30);
 
@@ -120,6 +123,9 @@ public final class ExperimentRunner {
     private final Optional<CommandChannel> commands;
     private final Listener listener;
 
+    /** A wiring check rather than a measurement; its outcome is never quotable. */
+    private final boolean diagnostic;
+
     private final List<RssiSample> collected = new ArrayList<>();
     private final List<Double> openingBaseline = new ArrayList<>();
     private final List<Double> closingBaseline = new ArrayList<>();
@@ -134,6 +140,13 @@ public final class ExperimentRunner {
     public ExperimentRunner(List<Block> plan,
                             Optional<CommandChannel> commands,
                             Listener listener) {
+        this(plan, commands, listener, false);
+    }
+
+    private ExperimentRunner(List<Block> plan,
+                             Optional<CommandChannel> commands,
+                             Listener listener,
+                             boolean diagnostic) {
         if (plan == null || plan.isEmpty()) {
             throw new IllegalArgumentException("plan must have at least one block");
         }
@@ -141,6 +154,12 @@ public final class ExperimentRunner {
         this.commands = commands == null ? Optional.empty() : commands;
         this.listener = listener == null ? new Listener() {
         } : listener;
+        this.diagnostic = diagnostic;
+    }
+
+    /** True when this run is a wiring check whose result must not be quoted. */
+    public boolean isDiagnostic() {
+        return diagnostic;
     }
 
     /**
@@ -169,6 +188,39 @@ public final class ExperimentRunner {
         // not to contribute statistics, and every extra sample is bench time.
         blocks.add(new Block(AntennaPath.CHIP, Math.max(5, perBlock / 4), true));
         return blocks;
+    }
+
+    /**
+     * A short plan that exercises the whole loop without measuring anything.
+     *
+     * <p>A real procedure floors at 100 samples per path, which is ten minutes of
+     * bench time before the operator learns whether the serial link, the command
+     * bytes and the switch confirmation even work. That is a terrible first thing
+     * to try on new hardware: every failure mode costs ten minutes to observe.
+     * This plan hits every state transition -- command, confirm, settle, collect,
+     * switch again, closing baseline -- in well under a minute.
+     *
+     * <p>Pair it with {@link #quickCheck}, which marks the run diagnostic so its
+     * outcome can never be quoted. That matters more than it looks: four samples
+     * a path will happily produce a delta, and a number on screen is a number
+     * someone will write down.
+     */
+    public static List<Block> quickCheckPlan() {
+        return List.of(
+                new Block(AntennaPath.CHIP, QUICK_CHECK_SAMPLES, false),
+                new Block(AntennaPath.EXTERNAL, QUICK_CHECK_SAMPLES, false),
+                new Block(AntennaPath.CHIP, QUICK_CHECK_SAMPLES, true));
+    }
+
+    /**
+     * Build a runner for {@link #quickCheckPlan()} whose outcome is never quotable.
+     *
+     * <p>This is a factory rather than a flag on the constructor so the plan and
+     * its diagnostic status cannot be separated by accident.
+     */
+    public static ExperimentRunner quickCheck(Optional<CommandChannel> commands,
+                                              Listener listener) {
+        return new ExperimentRunner(quickCheckPlan(), commands, listener, true);
     }
 
     /** Begin: request the first block's antenna. */
@@ -300,7 +352,7 @@ public final class ExperimentRunner {
     private void concludeRun() {
         double drift = baselineDriftDb();
         if (Double.isNaN(drift)) {
-            finish(true, "completed (no closing baseline to compare)");
+            finish(true, completionNote("no closing baseline to compare"));
             return;
         }
         if (Math.abs(drift) > MAX_BASELINE_DRIFT_DB) {
@@ -308,8 +360,26 @@ public final class ExperimentRunner {
                     .formatted(drift)
                     + "the RF environment changed, so the comparison is not valid");
         } else {
-            finish(true, "completed; baseline held to %+.1f dB".formatted(drift));
+            finish(true, completionNote("baseline held to %+.1f dB".formatted(drift)));
         }
+    }
+
+    /**
+     * The note for a run that completed cleanly.
+     *
+     * <p>A quick check that reached the end has proved the thing it exists to
+     * prove -- the link, the command bytes, the switch confirmation and the
+     * settle logic all work -- so it says so, and says just as plainly that it
+     * measured nothing.
+     */
+    private String completionNote(String baselineDetail) {
+        if (!diagnostic) {
+            return "completed; " + baselineDetail;
+        }
+        return "wiring check passed: both antennas switched on command and returned "
+                + "samples (" + baselineDetail + "). This is not a measurement -- "
+                + QUICK_CHECK_SAMPLES + " samples a path is far below the floor for a "
+                + "quotable delta. Run the full procedure for a result.";
     }
 
     /** Closing minus opening chip-antenna mean, or NaN when not computable. */
@@ -334,7 +404,10 @@ public final class ExperimentRunner {
         }
         finished = true;
         phase = Phase.FINISHED;
-        listener.onFinished(new Outcome(quotable, note, List.copyOf(collected), baselineDriftDb()));
+        // A diagnostic run is never quotable, whatever the blocks did. Enforced
+        // here rather than at the call sites so no future path can leak one.
+        listener.onFinished(new Outcome(quotable && !diagnostic, note,
+                List.copyOf(collected), baselineDriftDb()));
     }
 
     /** The phase the run is currently in. */
