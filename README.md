@@ -78,7 +78,39 @@ whose whole point is exercising modern Java it is the right side of the trade.
 
 ---
 
-## Build and run
+## Running it
+
+### The double-click launcher
+
+After `:app:packageImage` (see [Packaging](#packaging-for-people-who-dont-have-a-jdk)),
+the app is here:
+
+```
+antenna-lab\app\build\dist\Antenna Lab\Antenna Lab.exe
+```
+
+Full path on the development machine:
+
+```
+C:\Users\matth\JavaInTheWildAntennaExtension\antenna-lab\app\build\dist\Antenna Lab\Antenna Lab.exe
+```
+
+It bundles its own JDK 26 runtime, so it needs no Java installed and no
+administrator rights. **It lives under `build/`, which is git-ignored and
+deleted by `./gradlew clean`** — if the shortcut stops working, that is why.
+Rebuild it with:
+
+```bash
+./gradlew :app:packageImage
+```
+
+To put a shortcut on your desktop:
+
+```bash
+./gradlew :app:desktopShortcut
+```
+
+### From source
 
 ```bash
 ./gradlew :app:run

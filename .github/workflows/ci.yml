@@ -1,0 +1,110 @@
+# Antenna Lab CI.
+#
+# Two jobs, because they answer different questions and cost different amounts:
+#
+#   core     -- does the logic still work? Runs on Linux, no JavaFX anywhere on
+#               the classpath, so it is fast and cheap. This is the job that
+#               should stay green minute to minute.
+#   package  -- can we still ship it? Runs on Windows, builds everything and
+#               produces the actual double-clickable app image. Slower and
+#               billed at 2x on private repos, so it does not gate every push.
+#
+# The split matters because `core` holds the parser, the statistics, the
+# experiment runner and the reconnect policy -- the parts where a regression is
+# silent. A UI that fails to lay out is obvious the first time you run it; a
+# delta computed in the wrong domain is not.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push makes an in-flight run obsolete; cancel it rather than paying for
+# a result nobody will read.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: core tests (headless)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Java 26 exactly. The project compiles with --enable-preview, which locks
+      # its class files to the JDK that produced them -- a 25 or 27 toolchain
+      # does not "mostly work", it fails to load anything.
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test core
+        run: ./gradlew :core:test --no-daemon
+
+      # Uploaded on failure only: a green run's reports are noise, a red run's
+      # are the first thing you want.
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-test-reports
+          path: core/build/reports/tests/test
+          retention-days: 14
+
+  package:
+    name: full build + app image (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Includes the JavaFX render tests. They start a real toolkit and skip
+      # themselves via Assumptions when no graphics environment exists, so this
+      # step stays honest either way rather than silently passing an empty suite.
+      - name: Build and test
+        run: ./gradlew build --no-daemon
+
+      # The packaging step has broken twice for reasons no unit test could catch:
+      # a hardcoded jar name that the version bump invalidated, and jpackage
+      # refusing an existing destination. Both were only visible by running it.
+      - name: Package app image
+        run: ./gradlew :app:packageImage --no-daemon
+
+      - name: Check the launcher actually exists
+        shell: bash
+        run: |
+          exe="app/build/dist/Antenna Lab/Antenna Lab.exe"
+          test -f "$exe" || { echo "::error::jpackage reported success but produced no launcher"; exit 1; }
+          echo "Launcher present: $(du -h "$exe" | cut -f1)"
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-test-reports
+          path: |
+            core/build/reports/tests/test
+            app/build/reports/tests/test
+          retention-days: 14

@@ -135,7 +135,21 @@ fun Exec.commonJpackageArgs(type: String) {
         // Without this the task succeeds exactly once and then fails on every
         // rebuild -- the "works on a clean checkout, broken for everyone who
         // already built it" flavour of bug.
-        dest.resolve(appName).deleteRecursively()
+        //
+        // deleteRecursively() REPORTS failure rather than throwing, and the
+        // usual reason it fails is that the app is still running and Windows
+        // has the exe locked. Ignoring the result turns that into jpackage's
+        // opaque "destination already exists" three steps later, which has cost
+        // real debugging time on this project more than once.
+        val previous = dest.resolve(appName)
+        if (previous.exists() && !previous.deleteRecursively()) {
+            throw GradleException(
+                "could not clear ${previous.absolutePath}\n"
+                    + "The most likely cause is that Antenna Lab is still running - "
+                    + "Windows locks the running exe. Close the app and try again.\n"
+                    + "Check with:  Get-Process 'Antenna Lab'"
+            )
+        }
         dest.listFiles()?.filter { it.name.endsWith(".msi") || it.name.endsWith(".exe") }
             ?.forEach { it.delete() }
         dest.mkdirs()
@@ -183,6 +197,61 @@ tasks.register<Exec>("packageInstaller") {
     group = "distribution"
     description = "Native installer (.msi on Windows). Requires the WiX Toolset 3.x."
     commonJpackageArgs(if (isWindows) "msi" else "app-image")
+}
+
+/**
+ * Put a shortcut to the packaged launcher on the Windows desktop.
+ *
+ * The app image lives under `build/`, which is git-ignored and removed by
+ * `clean`, so a shortcut to it is a shortcut to something that can legitimately
+ * disappear. That is a fair trade for one double-click, but it is why this task
+ * depends on `packageImage` rather than assuming the exe is already there --
+ * running it always produces a shortcut that works right now.
+ *
+ * Uses PowerShell's WScript.Shell rather than a .bat wrapper so the result is a
+ * real .lnk: it carries the app icon, and it starts in the app's own directory
+ * instead of wherever Explorer happened to be.
+ */
+tasks.register("desktopShortcut") {
+    group = "distribution"
+    description = "Create a desktop shortcut to the packaged app (Windows only)."
+    dependsOn("packageImage")
+
+    doLast {
+        if (!isWindows) {
+            logger.lifecycle("Desktop shortcuts are Windows-only; nothing to do.")
+            return@doLast
+        }
+        val exe = layout.buildDirectory.file("dist/$appName/$appName.exe").get().asFile
+        if (!exe.exists()) {
+            throw GradleException("no launcher at ${exe.absolutePath} — packageImage did not produce one")
+        }
+
+        // [Environment]::GetFolderPath resolves the REAL desktop, which is not
+        // always %USERPROFILE%\Desktop -- OneDrive backup redirects it, and a
+        // shortcut written to the wrong path silently never appears.
+        val script = """
+            ${'$'}desktop = [Environment]::GetFolderPath('Desktop')
+            ${'$'}lnk = Join-Path ${'$'}desktop '$appName.lnk'
+            ${'$'}shell = New-Object -ComObject WScript.Shell
+            ${'$'}s = ${'$'}shell.CreateShortcut(${'$'}lnk)
+            ${'$'}s.TargetPath = '${exe.absolutePath}'
+            ${'$'}s.WorkingDirectory = '${exe.parentFile.absolutePath}'
+            ${'$'}s.IconLocation = '${exe.absolutePath},0'
+            ${'$'}s.Description = 'RF experiment manager and antenna test bench'
+            ${'$'}s.Save()
+            Write-Output ${'$'}lnk
+        """.trimIndent()
+
+        val proc = ProcessBuilder(
+            "powershell", "-NoProfile", "-NonInteractive", "-Command", script
+        ).redirectErrorStream(true).start()
+        val output = proc.inputStream.bufferedReader().readText().trim()
+        if (proc.waitFor() != 0) {
+            throw GradleException("could not create the desktop shortcut:\n$output")
+        }
+        logger.lifecycle("Desktop shortcut: $output")
+    }
 }
 
 /**
