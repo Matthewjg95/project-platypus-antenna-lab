@@ -165,6 +165,7 @@ public final class CapturePipeline implements AutoCloseable {
      * {@code join()} until they all finish or it is interrupted.
      */
     private void run() {
+        Runnable outcome;
         try {
             SampleProducer prod = injectedProducer != null
                     ? injectedProducer
@@ -199,21 +200,28 @@ public final class CapturePipeline implements AutoCloseable {
                 // failure after cancelling the rest.
                 scope.join();
             }
-            listener.onCompleted();
+            outcome = listener::onCompleted;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            listener.onCancelled();
+            outcome = listener::onCancelled;
         } catch (StructuredTaskScope.FailedException e) {
             // Unwrap so the UI shows "port disconnected", not a wrapper type.
             Throwable cause = e.getCause() == null ? e : e.getCause();
-            listener.onFailed(cause);
+            outcome = () -> listener.onFailed(cause);
         } catch (Exception e) {
-            listener.onFailed(e);
+            outcome = () -> listener.onFailed(e);
         } finally {
             producer = null;
             owner = null;
             running.set(false);
         }
+        // The terminal callback fires only AFTER running flips false, so a
+        // listener that reacts to onCancelled by checking isRunning() -- or by
+        // starting a new capture -- sees a pipeline that has actually stopped.
+        // Announcing first and transitioning second was a race the Linux CI
+        // runner lost on its first day on the job; Windows had been winning it
+        // by accident.
+        outcome.run();
     }
 
     /** Stage 2: queue -> rolling buffer, plus the full-run history when recording. */
