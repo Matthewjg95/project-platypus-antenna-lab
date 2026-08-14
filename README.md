@@ -1,5 +1,7 @@
 # Antenna Lab
 
+[![CI](https://github.com/Matthewjg95/project-platypus-antenna-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Matthewjg95/project-platypus-antenna-lab/actions/workflows/ci.yml)
+
 The verification and documentation pipeline for the M5Tab5 antenna test
 instrument, written in Java 26.
 
@@ -330,4 +332,6 @@ an isolated change.
 
 ## Licence
 
-TBD before submission.
+[GPLv3](LICENSE). Improvements to this tool stay open, matching the
+[CERN-OHL-S](https://github.com/Matthewjg95/project-platypus-patch-antenna)
+licence on the antenna hardware it measures.

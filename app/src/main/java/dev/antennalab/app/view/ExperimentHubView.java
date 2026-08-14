@@ -110,6 +110,14 @@ public final class ExperimentHubView extends BorderPane {
                     experimentList.getSelectionModel().select(created);
                 }));
 
+        Button newAntenna = new Button("New antenna");
+        newAntenna.setOnAction(e -> ExperimentDialogs.newDut(library, getScene().getWindow())
+                .ifPresent(created -> {
+                    library.put(created);
+                    library.save();
+                    updateStatus("Registered '" + created.name() + "' — available to every experiment");
+                }));
+
         Button save = new Button("Save library");
         save.setOnAction(e -> {
             library.save();
@@ -119,7 +127,7 @@ public final class ExperimentHubView extends BorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        return new ToolBar(newExperiment, new Separator(), save, spacer);
+        return new ToolBar(newExperiment, newAntenna, new Separator(), save, spacer);
     }
 
     private HBox buildStatusBar() {

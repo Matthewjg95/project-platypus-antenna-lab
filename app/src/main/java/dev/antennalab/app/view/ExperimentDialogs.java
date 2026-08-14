@@ -173,6 +173,82 @@ final class ExperimentDialogs {
         return Optional.ofNullable(dialog.showAndWait().orElse(null));
     }
 
+    /**
+     * Ask for a new antenna (or any bench asset). Empty when cancelled.
+     *
+     * <p>Creates a {@link Dut.GenericDut}: name, a kind, and free-text notes for
+     * dimensions. Deliberately the loose variant — the structured
+     * {@code PatchAntenna} geometry exists for when a design is worth
+     * transcribing in full, but requiring it here would mean future projects
+     * still need a code edit just to register their antenna, which is the exact
+     * gap this dialog closes.
+     */
+    static Optional<Dut> newDut(LabLibrary library, Window owner) {
+        Dialog<Dut> dialog = new Dialog<>();
+        dialog.setTitle("New antenna");
+        dialog.setHeaderText("Register a device under test");
+        if (owner != null) {
+            dialog.initOwner(owner);
+        }
+
+        ButtonType create = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(create, ButtonType.CANCEL);
+
+        TextField name = new TextField();
+        name.setPromptText("915 MHz helical, wound 2026-08");
+
+        ComboBox<String> kind = new ComboBox<>();
+        kind.getItems().addAll("patch antenna", "chip antenna", "wire / whip",
+                "helical", "PCB trace", "cable / adapter", "other");
+        kind.getSelectionModel().selectFirst();
+        kind.setEditable(true);
+
+        TextArea notes = new TextArea();
+        notes.setPromptText("Dimensions, materials, connector, anything a future you "
+                + "will wish was written down. Structured geometry can be added to "
+                + "the library JSON later without touching this record's id.");
+        notes.setPrefRowCount(4);
+        notes.setWrapText(true);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(8);
+        grid.setPadding(new Insets(14));
+        grid.addRow(0, new Label("Name"), name);
+        grid.addRow(1, new Label("Kind"), kind);
+        grid.addRow(2, new Label("Notes"), notes);
+
+        Label whatNext = new Label(
+                "Registers the antenna in the library. Reference it from any number of "
+                        + "experiments; correcting it later fixes every one of them.");
+        whatNext.setWrapText(true);
+        whatNext.setStyle("-fx-opacity: 0.7; -fx-font-size: 11px;");
+        grid.add(whatNext, 0, 3, 2, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        var okButton = dialog.getDialogPane().lookupButton(create);
+        okButton.setDisable(true);
+        name.textProperty().addListener((o, a, b) -> okButton.setDisable(b.isBlank()));
+
+        dialog.setResultConverter(button -> {
+            if (button != create) {
+                return null;
+            }
+            String kindText = kind.getEditor().getText();
+            if (kindText == null || kindText.isBlank()) {
+                kindText = kind.getSelectionModel().getSelectedItem();
+            }
+            return new Dut.GenericDut(
+                    dutSlugFor(name.getText(), library),
+                    name.getText().strip(),
+                    kindText == null ? "" : kindText.strip(),
+                    notes.getText().strip());
+        });
+
+        return Optional.ofNullable(dialog.showAndWait().orElse(null));
+    }
+
     /** Ask for a conclusion and return the concluded experiment. */
     static Optional<Experiment> conclude(Experiment experiment, Window owner) {
         Dialog<Experiment> dialog = new Dialog<>();
@@ -215,6 +291,24 @@ final class ExperimentDialogs {
      * emergency, hand-edited -- a UUID in a git diff tells you nothing about what
      * changed.
      */
+    /** Like {@link #slugFor}, but unique among DUT ids rather than experiment ids. */
+    private static String dutSlugFor(String name, LabLibrary library) {
+        String base = name.strip().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        if (base.isEmpty()) {
+            base = "antenna";
+        }
+        if (library.dut(base).isEmpty()) {
+            return base;
+        }
+        int suffix = 2;
+        while (library.dut(base + "-" + suffix).isPresent()) {
+            suffix++;
+        }
+        return base + "-" + suffix;
+    }
+
     private static String slugFor(String title, LabLibrary library) {
         String base = title.strip().toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
