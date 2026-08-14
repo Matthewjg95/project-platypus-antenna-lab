@@ -344,11 +344,12 @@ public final class AntennaLabApp extends Application {
 
         sourceStatus.setText(Source.summarise(source));
         // Provenance is styled as well as worded: measured data must not share a
-        // colour with simulation. Note for serial runs: opening the port resets
-        // the board (DTR), so the first samples arrive after a ~5 s reboot.
+        // colour with simulation. Connecting no longer resets the board -- the
+        // producer holds DTR/RTS low across the open -- so samples start arriving
+        // at the firmware's own cadence rather than after a boot.
         provenanceStatus.getStyleClass().removeAll("simulated", "live");
         if (source.isLiveHardware()) {
-            provenanceStatus.setText("LIVE - measured on hardware (board reboots on connect)");
+            provenanceStatus.setText("LIVE - measured on hardware");
             provenanceStatus.getStyleClass().add("live");
         } else {
             provenanceStatus.setText("SIMULATED - not measured data");

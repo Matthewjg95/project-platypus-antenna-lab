@@ -16,11 +16,14 @@ import java.time.Instant;
  * cancellation is the interrupt from the enclosing {@code StructuredTaskScope},
  * plus {@link #close()} closing the port out from under a blocked read.
  *
- * <p><b>Connect-time reset is expected.</b> Opening the port toggles DTR, which
- * trips the ESP32's auto-reset — the observed capture begins with the boot ROM
- * banner ({@code rst:0x17 CHIP_USB_UART_RESET}). The parser treats banner and
- * log chatter as skippable noise, so the stream simply starts producing samples
- * once the firmware is back up (a few seconds).
+ * <p><b>Connecting does not reset the board.</b> Opening a port normally toggles
+ * DTR, which trips the ESP32's auto-reset and costs a few seconds of boot before
+ * any sample arrives. Holding DTR and RTS low across the open (see
+ * {@link #produce}) avoids that entirely — verified on hardware by the firmware's
+ * own uptime counter running continuously across a connect, with no boot ROM
+ * banner. The parser still treats banner and log chatter as skippable noise, so a
+ * capture that <em>does</em> begin with a reboot (a crash, or a manual reset) is
+ * handled rather than mis-parsed.
  *
  * <p>Samples are stamped on arrival: the firmware prints no per-sample
  * timestamps, and at its ~1.5–2 s cadence USB latency is noise.
