@@ -321,3 +321,21 @@
 .text-field:focused, .text-area:focused {
     -fx-border-color: -external-colour;
 }
+
+/* ---- run progress panel ---- */
+.run-progress {
+    -fx-background-color: #12333A;
+    -fx-background-radius: 2;
+}
+.run-segment {
+    -fx-padding: 2 6 2 6;
+    -fx-background-radius: 2;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 10px;
+    -fx-opacity: 0.45;
+    -fx-background-color: #1A242E;
+}
+.seg-chip     { -fx-text-fill: #FFB01F; }
+.seg-external { -fx-text-fill: #22D3EE; }
+.seg-live     { -fx-opacity: 1.0; -fx-background-color: #24313D; -fx-border-color: #3E5668; -fx-border-radius: 2; }
+.seg-done     { -fx-opacity: 0.8; }

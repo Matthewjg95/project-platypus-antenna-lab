@@ -50,21 +50,48 @@ final class ExperimentDialogs {
         ButtonType create = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(create, ButtonType.CANCEL);
 
-        TextField title = new TextField();
-        title.setPromptText("Design C vs chip antenna at 3 m");
-
+        // Question first: it is the one field the domain refuses to live
+        // without, so it should not sit below an optional-feeling title box.
         TextArea question = new TextArea();
         question.setPromptText(
                 "How much gain does Design C deliver over the chip antenna, measured like-for-like?");
         question.setPrefRowCount(3);
         question.setWrapText(true);
 
+        TextField title = new TextField();
+        title.setPromptText("(auto-filled from the question — edit if you like)");
+
+        // Auto-suggest the title from the question's first clause, until the
+        // user edits it themselves. Nobody wants to write the same idea twice.
+        final boolean[] titleTouched = {false};
+        title.setOnKeyTyped(e -> titleTouched[0] = true);
+        question.textProperty().addListener((o, a, text) -> {
+            if (!titleTouched[0]) {
+                String head = text.strip();
+                int cut = head.indexOf('?');
+                if (cut < 0) {
+                    cut = Math.min(head.length(), 60);
+                }
+                title.setText(head.substring(0, cut).strip());
+            }
+        });
+
+        // A procedure is a commitment of bench time; show the cost next to the
+        // name so choosing one is an informed decision, not a guess at a label.
         ComboBox<Procedure> procedure = new ComboBox<>();
         procedure.getItems().addAll(library.procedures());
         procedure.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(Procedure p) {
-                return p == null ? "(none)" : "%s v%s".formatted(p.name(), p.version());
+                if (p == null) {
+                    return "(none)";
+                }
+                // ~1.5 s per sample at the firmware's observed cadence, both
+                // paths, plus switch overhead. Rough on purpose; labelled so.
+                long minutes = Math.max(1, Math.round(
+                        p.minSamplesPerPath() * 2 * 1.5 / 60.0));
+                return "%s v%s — ≥%,d samples/path, roughly %d min"
+                        .formatted(p.name(), p.version(), p.minSamplesPerPath(), minutes);
             }
 
             @Override
@@ -94,10 +121,19 @@ final class ExperimentDialogs {
         grid.setHgap(10);
         grid.setVgap(8);
         grid.setPadding(new Insets(14));
-        grid.addRow(0, new Label("Title"), title);
-        grid.addRow(1, new Label("Question"), question);
+        grid.addRow(0, new Label("Question"), question);
+        grid.addRow(1, new Label("Title"), title);
         grid.addRow(2, new Label("Procedure"), procedure);
         grid.addRow(3, new Label("Under test"), dutBox);
+
+        // Say what Create actually does, so the dialog is not a leap of faith.
+        Label whatNext = new Label(
+                "Creates a planned experiment. Run it from the hub when the instrument "
+                        + "is connected — the app drives the antenna switch itself.");
+        whatNext.setWrapText(true);
+        whatNext.setStyle("-fx-opacity: 0.7; -fx-font-size: 11px;");
+        grid.add(whatNext, 0, 4, 2, 1);
+
         dialog.getDialogPane().setContent(grid);
 
         var okButton = dialog.getDialogPane().lookupButton(create);

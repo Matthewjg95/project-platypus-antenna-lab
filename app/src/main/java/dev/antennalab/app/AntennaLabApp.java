@@ -51,6 +51,8 @@ public final class AntennaLabApp extends Application {
 
     private final ScopeView scope = new ScopeView();
     private final DeltaCard deltaCard = new DeltaCard();
+    private final dev.antennalab.app.view.RunProgressPanel runProgress =
+            new dev.antennalab.app.view.RunProgressPanel();
 
     private final Label sourceStatus = new Label("Idle");
     private final Label sampleStatus = new Label("0 samples");
@@ -316,7 +318,7 @@ public final class AntennaLabApp extends Application {
         Label title = new Label("MEASUREMENT");
         title.getStyleClass().add("section-title");
 
-        panel.getChildren().addAll(title, deltaCard);
+        panel.getChildren().addAll(title, deltaCard, runProgress);
         return panel;
     }
 
@@ -337,6 +339,10 @@ public final class AntennaLabApp extends Application {
         SourceOption chosen = sourceCombo.getValue();
         Source source = chosen != null ? chosen.source()
                 : SyntheticSource.demoWithSeed(System.nanoTime());
+
+        // A fresh capture clears the previous run's panel; if this capture IS a
+        // run, beginRun() re-shows it immediately after with the new plan.
+        runProgress.dismiss();
 
         pipeline = new CapturePipeline(source, new UiCaptureListener());
         pipeline.setRecording(true);
@@ -473,6 +479,7 @@ public final class AntennaLabApp extends Application {
 
         runner = new dev.antennalab.core.run.ExperimentRunner(
                 plan, pipeline.commands(), new RunListener(commanded, false));
+        runProgress.beginRun(plan, false);
         attachRunnerTap();
         pipeline.setRecording(true);
         runner.start();
@@ -505,6 +512,7 @@ public final class AntennaLabApp extends Application {
         boolean commanded = pipeline.commands().isPresent();
         runner = dev.antennalab.core.run.ExperimentRunner.quickCheck(
                 pipeline.commands(), new RunListener(commanded, true));
+        runProgress.beginRun(runner.plan(), true);
         attachRunnerTap();
         // Deliberately NOT recording: a wiring check is not evidence, and a
         // session full of it would be clutter in the library.
@@ -543,24 +551,31 @@ public final class AntennaLabApp extends Application {
         @Override
         public void onPhase(dev.antennalab.core.run.ExperimentRunner.Phase phase,
                             AntennaPath target, int blockIndex, int blockCount) {
-            Platform.runLater(() -> sourceStatus.setText(
-                    "Block %d/%d — %s %s".formatted(
-                            blockIndex + 1, blockCount, phase, target.displayName())));
+            Platform.runLater(() -> {
+                sourceStatus.setText("Block %d/%d — %s %s".formatted(
+                        blockIndex + 1, blockCount, phase, target.displayName()));
+                runProgress.showPhase(phase, target, blockIndex);
+            });
         }
 
         @Override
         public void onProgress(int collected, int target) {
-            Platform.runLater(() -> sampleStatus.setText(
-                    "run: %d/%d in block".formatted(collected, target)));
+            Platform.runLater(() -> {
+                sampleStatus.setText("run: %d/%d in block".formatted(collected, target));
+                runProgress.showProgress(collected, target);
+            });
         }
 
         @Override
         public void onSwitchRequested(AntennaPath to) {
             // Guided mode. The run does not proceed on this instruction alone --
             // it still waits for the device to report the new path.
-            Platform.runLater(() -> sourceStatus.setText(
-                    "SWITCH THE ANTENNA TO " + to.displayName().toUpperCase(java.util.Locale.ROOT)
-                            + " — waiting for the device to confirm"));
+            Platform.runLater(() -> {
+                sourceStatus.setText(
+                        "SWITCH THE ANTENNA TO " + to.displayName().toUpperCase(java.util.Locale.ROOT)
+                                + " — waiting for the device to confirm");
+                runProgress.showSwitchRequest(to);
+            });
         }
 
         @Override
@@ -571,6 +586,7 @@ public final class AntennaLabApp extends Application {
                     pipeline.stop();
                 }
                 setRunningState(false);
+                runProgress.showOutcome(outcome);
 
                 if (diagnostic) {
                     // The note already says whether the loop worked and, if it
