@@ -99,20 +99,45 @@ high delta and was excluded from conclusions pending repeatability.
 
 ## What the software does
 
-1. **Live capture.** Opens the serial port, parses the RSSI stream, and plots
-   both antenna paths as live scope traces with a rolling window, pause/resume,
-   and operator markers.
-2. **Session recording.** Records runs to a session file, and imports the
-   firmware's existing CSV logs into the same model — so field captures and
-   desk captures are comparable on equal terms.
-3. **Analysis.** Per-trace mean, median, min/max, p95 and standard deviation,
-   and the headline delta-dB between antennas with a confidence grade.
-4. **A/B comparison.** Overlays two sessions — chip vs patch, or patch Rev 7.13
-   vs a future Rev 8 — aligned by time or by sample index.
-5. **Report export.** One-click HTML report with embedded charts, the statistics
-   table, and the test-conditions metadata.
-6. **Replay and simulation.** A synthetic RSSI source and CSV replay, so the whole
-   application is demonstrable with nothing plugged in.
+1. **Finds the instrument itself.** Scans serial ports and identifies the Tab5
+   by its log signature in under a second — no COM-port menus. Connecting does
+   not reset the board: DTR/RTS are held low across the open, verified by the
+   firmware's own uptime counter running straight through a connect.
+2. **Live capture.** Parses the RSSI stream and plots both antenna paths as
+   live scope traces with a rolling window, pause/resume, and operator markers.
+   Every byte off the wire is also written to a raw log *before* parsing — the
+   processed result is never the only surviving copy of a measurement.
+3. **Runs experiments hands-free.** The app commands the Tab5's RF switch over
+   two-byte serial commands and executes a whole procedure on its own:
+   interleaved chip/external blocks (so environmental drift cancels instead of
+   masquerading as gain), switches confirmed by the device's own log line
+   rather than assumed, settle samples discarded, and a closing baseline that
+   voids the run if the RF environment moved. A void run is still saved — the
+   evidence is kept, the conclusion is refused.
+4. **Survives the instrument rebooting.** If the device drops mid-capture, the
+   capture reconnects and continues with a visible gap, monotonic sequence
+   numbers, and a per-outage retry budget. The run's own validity checks still
+   apply — reconnection rescues the capture, never the conclusion.
+5. **A 30-second quick check.** Commands both antennas, confirms both switched,
+   and then says in plain words that it proved the wiring and measured nothing.
+   The full procedure takes ten minutes; finding a dead link should not.
+6. **Analysis.** Per-trace mean, median, min/max, p95 and standard deviation,
+   and the headline delta-dB with a 95% CI and a confidence grade that refuses
+   to quote insufficient, unbalanced, or below-resolution data.
+7. **A lab library with rules.** DUTs carry real geometry as structured data,
+   procedures are versioned, and experiments must state a question — the
+   constructor rejects one without it. Runs attach to experiments only if they
+   pass their own checks.
+8. **Report export.** One-click self-contained HTML report: charts, statistics,
+   confidence grade, and the conditions the run was taken under.
+9. **Simulation, honestly labelled.** A synthetic source makes the whole app
+   demonstrable with nothing plugged in — and the UI watermarks it SIMULATED,
+   in a different colour, so measured and simulated data cannot be confused.
+
+Not built yet, and said plainly: session A/B overlay is the next feature; CSV
+import is written and tested but stays unwired until a real firmware CSV is
+captured, because a parser built on a guessed column layout looks finished
+while silently misreading data.
 
 ---
 
@@ -386,11 +411,36 @@ The app starts in synthetic mode, so it runs with no board attached.
 
 ## What I'd do next
 
-<!-- TODO: fill in after the build is complete. -->
+- **Session A/B overlay** — two sessions on one scope, chip vs patch or
+  Rev 7.13 vs a future Rev 8. The statistics for it already exist; the view is
+  what's missing.
+- **Replay a saved session through the live pipeline** — the last link in
+  reproducibility: the same capture, re-analysed by a later version of the
+  software, should produce the same report.
+- **CSV import surfaced in the UI** — the moment a real firmware CSV is
+  captured to build it against.
+- **Pluggable AI assistance** — a bring-your-own-key setting (Gemini free tier
+  or Claude) for antenna-design inference over the lab library. Deliberately
+  optional: the app is fully functional with no key, and measurement must never
+  depend on a cloud.
+- **An S11 sweep on a VNA** — the measurement this rig honestly cannot make,
+  and the only way to rank the three matching designs.
 
 ---
 
 ## Credits and links
 
-<!-- TODO: link the Project Platypus antenna build log, the firmware repo, and
-     the demo video. -->
+- **[Project Platypus](https://github.com/Matthewjg95/project-platypus)** — the
+  M5Stack contest entry this grew out of: a Tab5 that scans a room and paints
+  RF onto its own map.
+- **[The patch antenna](https://github.com/Matthewjg95/project-platypus-patch-antenna)** —
+  KiCad sources for the Rev 7.13.1 panel, three matching designs on one board,
+  CERN-OHL-S.
+- **Firmware** — the Tab5's applet firmware (3D viewer, room scanner, antenna
+  bench) lives in its own repo; the antenna applet's serial protocol is what
+  this app speaks.
+- Built with **Temurin JDK 26**, **JavaFX 26**, **jSerialComm**, and one
+  hand-written JSON codec. Total runtime dependency count: one.
+
+<!-- TODO: add the demo video link before submission. -->
+
