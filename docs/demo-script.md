@@ -1,139 +1,94 @@
 # Demo video script — Antenna Lab
 
-Target: **2–3 minutes**. Contest judges watch a lot of these; the point has to
-land inside the first 30 seconds.
+Hard ceiling: **120 seconds** (contest limit is 90–120 s). This cut aims for
+~110 s so one flubbed transition doesn't blow the limit. Every beat earns its
+seconds or gets cut; the casualties are listed at the bottom so nothing
+sneaks back in.
 
-The point is NOT an antenna result — we do not have a validated one, and the
-script must not imply otherwise. The point is the *system*: a desktop app that
-turns an RF measurement into a reproducible, inspectable experiment record, and
-refuses to overstate what the data shows.
-
----
-
-## Cold open (0:00–0:25)
-
-Tab5 on the bench, patch antenna connected, app already running with live
-traces moving. Status bar reads `LIVE - measured on hardware`.
-
-> "This is an M5Stack Tab5 with an RF switch between its internal antenna and a
-> patch antenna I etched myself. And this is Antenna Lab — a Java 26 desktop app
-> that runs antenna experiments on it, hands-free, and records everything."
-
-Point at the delta card: the number, the confidence interval, the grade line.
-
-> "That number never appears without its error bars. If the data can't support
-> it, the app says so instead of showing it. That honesty is the product."
+The point is NOT an antenna result — we do not have a validated one and the
+video must not imply otherwise. The point is the system: a desktop app that
+runs antenna experiments hands-free and refuses to overstate what the data
+shows.
 
 ---
 
-## The instrument and its pipeline (0:25–0:55)
+## Cold open (0:00–0:15)
 
-> "The Tab5 is the instrument — it measures RSSI and flips the RF switch in
-> milliseconds. The app is its pipeline. It finds the device on serial by its
-> log signature — no COM port menus — and it can command the switch itself over
-> two-byte serial commands."
+Bench shot: Tab5 + patch antenna + app running, both traces live.
 
-Live: click **Quick check**. Narrate while it runs (~30 s — trim in edit).
+> "A patch antenna I etched myself, a $60 tablet with an RF switch, and a
+> Java 26 app that turns them into an automated antenna test bench. My first
+> measurement claimed +12.5 dB. It was wrong — and this tool is how I found
+> out."
 
-> "This is a thirty-second wiring check: command the chip antenna, confirm the
-> device actually switched, collect, command the external, confirm, collect,
-> return to baseline. And when it finishes —"
+The withdrawn claim IS the hook. Twelve seconds in, judges know this entry
+is about honesty, not bar charts.
 
-Show the status line: *wiring check passed ... This is not a measurement.*
+## The machine works (0:15–0:50)
 
-> "— it tells you it proved the rig works and measured nothing. Four samples is
-> not data, and the app knows that."
+Screen capture, automated run already going. Speed-ramp the boring middle.
 
----
+> "The app finds the instrument on serial by itself and drives the RF switch
+> over two-byte commands. A run interleaves chip and external blocks so a
+> changing room can't masquerade as antenna gain, throws away samples until
+> the device itself confirms each switch, and ends by re-measuring the
+> baseline — if the room moved, the run declares itself void. It still saves
+> the data. It just refuses to attach a conclusion to it."
 
-## A real experiment (0:55–1:45)
+Visuals in order: progress panel segments filling → trace flipping
+amber/cyan → status line with a confirmed switch → (cut) → delta card with
+CI and grade.
 
-Switch to the Experiments tab. Show the seeded library: DUTs with real
-geometry, versioned procedures, experiments with stated questions.
+## The record (0:50–1:15)
 
-> "Experiments here have to state a question — the constructor literally
-> rejects one without it. Procedures are versioned, so two runs are comparable
-> only if they cite the same procedure."
+One slow scroll of the HTML report; two seconds on ~/AntennaLab in Explorer.
 
-Click **Run** on an experiment. Show the scope during the automated run:
-alternating CHIP/EXT blocks, the block counter in the status bar.
+> "Every number ships with its error bars and a confidence grade — under-
+> sampled or below the instrument's resolution, it refuses to quote at all.
+> The raw serial stream is on disk byte-for-byte before any parsing touched
+> it, and every run attaches to an experiment with a stated question, a
+> versioned procedure, and a written conclusion. The product is the evidence
+> chain."
 
-> "The run interleaves the antennas — chip, external, chip, external — so if
-> the room changes mid-run, the drift lands on both antennas instead of
-> masquerading as gain. Samples during a switch are thrown away until the
-> device itself confirms the new path. And it ends by re-measuring the baseline:
-> if the room moved too much, the run declares itself void. It still saves the
-> data — it just refuses to attach a conclusion to it."
+## The Java (1:15–1:40)
 
-<!-- Record this segment from a real run; if the full 10-minute procedure is
-     too long for the shoot, film the first two blocks and the report of an
-     earlier completed run. Never present a synthetic run as measured -- the
-     status bar says SIMULATED on camera. -->
+Editor, ONE screenful: the CapturePipeline scope block. No second example.
 
-## The record (1:45–2:15)
+> "Java 26, structured concurrency, virtual threads. The classic serial bug
+> is a reader thread that outlives the capture and holds the port hostage —
+> this block can't be left while any stage runs, so releasing the port is
+> guaranteed by the language, not by my discipline."
 
-Open the HTML report. Scroll once, slowly.
+## Close (1:40–1:50)
 
-> "One click and the experiment is an artefact: the traces, the statistics, the
-> confidence grade, and the conditions it ran under. The raw serial stream is
-> also on disk, byte for byte, before any parsing touched it — so the processed
-> result is never the only surviving copy of a measurement."
+Back to the bench.
 
-Show `~/AntennaLab` in Explorer briefly: `library/`, `sessions/`, `raw/`.
-
-> "Designs, procedures, runs and raw captures — all JSON and plain text, meant
-> to live in git next to the KiCad project they describe."
+> "It measured my antenna, told me it was worse, and saved the receipts.
+> That's the tool I wish I'd had before I believed my first measurement."
 
 ---
 
-## The Java angle (2:15–2:45)
+## Timing discipline
 
-Cut to the editor. One screenful: the `CapturePipeline` scope block.
+- Read the narration aloud with a timer BEFORE recording visuals: the text
+  above is ~230 words ≈ 95–105 s at a natural pace. If any section runs
+  long, cut words, not playback speed.
+- Speed-ramp (4–8×) the middle of the automated run; never speed-ramp the
+  switch confirmation moment — that beat is the product.
+- Leave 2 s of clean bench footage at the end for the fade.
 
-```java
-try (prod; var scope = StructuredTaskScope.open()) {
-    scope.fork(() -> { prod.produce(queue::put); return null; });
-    scope.fork(() -> { runBufferStage();          return null; });
-    scope.fork(() -> { runPublishStage();         return null; });
-    scope.join();
-}
-```
+## Cut from the 3-minute version (do not sneak back)
 
-> "Java 26, structured concurrency, virtual threads. The classic serial-port
-> bug is a reader thread that outlives the capture and keeps the port hostage.
-> This block cannot be left while any stage is running — releasing the port
-> isn't something I remembered to do, it's something the language guarantees.
-> And because the source types are sealed, adding a new one turns every switch
-> over them into a compile error that names what I still have to handle."
+- The quick-check segment (its story is told by the run itself)
+- The problem-statement section ("is it the antenna or did I move")
+- The sealed-types second code example
+- Pause/marker interaction, library walkthrough, milestones
 
----
+## Shot list (unchanged assets, fewer of them)
 
-## Close (2:45–3:00)
-
-Back to the bench, app running.
-
-> "I don't have a validated antenna result yet — an early measurement looked
-> spectacular and didn't survive scrutiny, and the app is why I know that.
-> That's the pitch: not a number, but a bench that won't let me fool myself."
-
----
-
-## Shot list
-
-- [ ] Bench wide: Tab5, patch antenna, laptop
-- [ ] Close-up: patch antenna, MMCX connector, RF switch region
-- [ ] Screen: auto-detect connecting on launch (status bar sequence)
-- [ ] Screen: quick check end-to-end, including the "not a measurement" line
-- [ ] Screen: automated run — switch confirmations, block counter
-- [ ] Screen: a void run's status line (stage one by unplugging mid-run if needed)
-- [ ] Screen: HTML report, one slow scroll
-- [ ] Explorer: ~/AntennaLab tree
+- [ ] Bench wide: Tab5 + patch + laptop, both screens alive (also the cover GIF session)
+- [ ] Screen: automated run — panel filling, trace flip, confirmed switch
+- [ ] Screen: delta card with CI + grade
+- [ ] Screen: HTML report, one slow scroll; Explorer on ~/AntennaLab
 - [ ] Editor: CapturePipeline scope block
-
-## Recording notes
-
-- App maximised at 1920×1080; UI text must survive compression.
-- The status bar reads `SIMULATED` in synthetic mode and that WILL be on
-  camera. Any segment presented as measured must come from a live capture.
-- No gain figures anywhere in the narration. If a delta is visible on screen,
-  its grade line must be visible too.
+- [ ] Status bar reads LIVE in every measured shot — SIMULATED will be on camera otherwise
