@@ -37,6 +37,21 @@ territory, and lab equipment is expensive.
 So: build the instrument in software, and point it at hardware that costs less
 than lunch.
 
+The personal stake is concrete. Every home has the same unsolved RF problems:
+the room the WiFi never reaches, the smart-home sensor that drops offline, the
+Meshtastic node that needs a better antenna than the rubber duck it shipped
+with. The fix is often an antenna — bought or built — and the moment you change
+one, you are running an experiment whether you admit it or not. Antenna Lab is
+the difference between "the bars look better" and knowing, with error bars,
+whether the thing you changed actually helped. My own first measurement is the
+cautionary tale: it claimed +12.5 dB, it was wrong, and this tool is how I
+found out.
+
+It is also deliberately a BYOD build: the entire bench is a laptop you already
+own and a $60 M5Stack tablet — no VNA, no spectrum analyser, no lab. The
+tablet is the instrument, the laptop is its pipeline, and the RF switch that
+makes honest A/B comparison possible ships on the board.
+
 The Java angle is not incidental. "Take Java where Java hasn't gone before" is the
 category, and RF test and measurement is squarely a place Java isn't. This is a
 domain owned by LabVIEW, MATLAB, and a long tail of Python scripts. The argument

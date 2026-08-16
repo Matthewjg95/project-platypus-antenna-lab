@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1460" viewBox="0 0 2200 1460" font-family="Cascadia Code, Consolas, monospace">
+<rect width="2200" height="1460" fill="#F5F4F1"/>
+<text x="60" y="88" font-size="46" font-weight="bold" fill="#1a1a1a">ANTENNA LAB</text>
+<text x="60" y="128" font-size="26" fill="#555">system wiring - automated RF test bench (laptop + M5Stack Tab5)</text>
+<line x1="60" y1="150" x2="2140" y2="150" stroke="#1a1a1a" stroke-width="2"/>
+
+<!-- LAPTOP -->
+<rect x="100" y="300" width="560" height="570" rx="14" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+<text x="130" y="345" font-size="28" font-weight="bold" fill="#1a1a1a">LAPTOP</text>
+
+<rect x="140" y="375" width="480" height="160" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="160" y="410" font-size="23" font-weight="bold" fill="#1a1a1a">Antenna Lab (Java 26)</text>
+<text x="160" y="442" font-size="20" fill="#555">JavaFX scope + experiment hub</text>
+<text x="160" y="470" font-size="20" fill="#555">structured-concurrency pipeline</text>
+<text x="160" y="498" font-size="20" fill="#555">sessions / raw logs / HTML reports</text>
+
+<rect x="140" y="560" width="480" height="120" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="160" y="595" font-size="23" font-weight="bold" fill="#1a1a1a">ExperimentRunner</text>
+<text x="160" y="627" font-size="20" fill="#555">commanded A/B runs: confirmed</text>
+<text x="160" y="655" font-size="20" fill="#555">switches, settle, closing baseline</text>
+
+<rect x="140" y="705" width="480" height="120" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="160" y="740" font-size="23" font-weight="bold" fill="#1a1a1a">jSerialComm</text>
+<text x="160" y="772" font-size="20" fill="#555">USB CDC 115200, DTR/RTS held low</text>
+<text x="160" y="800" font-size="20" fill="#555">(connect does NOT reset the board)</text>
+
+<!-- serial link -->
+<line x1="660" y1="585" x2="900" y2="585" stroke="#1565C0" stroke-width="6"/>
+<text x="780" y="465" font-size="20" fill="#1565C0" text-anchor="middle">USB-C serial</text>
+<text x="780" y="495" font-size="20" fill="#1565C0" text-anchor="middle">&#8594; AE/AI/AQ cmds</text>
+<text x="780" y="525" font-size="20" fill="#1565C0" text-anchor="middle">&#8592; [SAMPLE]/[ANT]</text>
+
+<!-- TAB5 -->
+<rect x="900" y="240" width="760" height="910" rx="14" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+<text x="930" y="288" font-size="28" font-weight="bold" fill="#1a1a1a">M5STACK TAB5</text>
+
+<rect x="940" y="320" width="420" height="180" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="960" y="355" font-size="23" font-weight="bold" fill="#1a1a1a">ESP32-P4 @360MHz</text>
+<text x="960" y="387" font-size="20" fill="#555">RISC-V, no radio of its own</text>
+<text x="960" y="415" font-size="20" fill="#555">antenna applet: scan loop, RSSI,</text>
+<text x="960" y="443" font-size="20" fill="#555">on-device scope + CSV logging</text>
+<text x="960" y="471" font-size="20" fill="#555">serial command poll (AE/AI/AQ)</text>
+
+<rect x="1420" y="320" width="200" height="110" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="1440" y="355" font-size="23" font-weight="bold" fill="#1a1a1a">ESP32-C6</text>
+<text x="1440" y="387" font-size="20" fill="#555">2.4GHz radio</text>
+
+<line x1="1360" y1="375" x2="1420" y2="375" stroke="#1565C0" stroke-width="6"/>
+<text x="1250" y="310" font-size="20" fill="#1565C0">SDIO hosted WiFi</text>
+
+<rect x="1420" y="480" width="200" height="130" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="1440" y="515" font-size="23" font-weight="bold" fill="#1a1a1a">RF SWITCH</text>
+<text x="1440" y="547" font-size="19" fill="#555">PI4IOE5V6408</text>
+<text x="1440" y="575" font-size="19" fill="#555">@0x43 P0</text>
+
+<line x1="1520" y1="430" x2="1520" y2="480" stroke="#7B1FA2" stroke-width="5"/>
+<path d="M 1360 400 L 1390 400 L 1390 545 L 1420 545" fill="none" stroke="#2E7D32" stroke-width="4" stroke-dasharray="10 7"/>
+<text x="950" y="528" font-size="19" fill="#2E7D32">I2C ctl (queued: remote + touch can't race)</text>
+
+<rect x="1400" y="670" width="115" height="85" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="1416" y="705" font-size="21" font-weight="bold" fill="#1a1a1a">int.</text>
+<text x="1416" y="733" font-size="21" font-weight="bold" fill="#1a1a1a">ant</text>
+<rect x="1540" y="670" width="105" height="85" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="1556" y="718" font-size="21" font-weight="bold" fill="#1a1a1a">MMCX</text>
+<line x1="1480" y1="610" x2="1455" y2="670" stroke="#7B1FA2" stroke-width="5"/>
+<line x1="1560" y1="610" x2="1590" y2="670" stroke="#7B1FA2" stroke-width="5"/>
+
+<rect x="940" y="540" width="420" height="90" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="960" y="575" font-size="22" font-weight="bold" fill="#1a1a1a">1280x720 touch display</text>
+<text x="960" y="605" font-size="20" fill="#555">the instrument's own scope UI</text>
+
+<rect x="940" y="660" width="420" height="90" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="960" y="695" font-size="22" font-weight="bold" fill="#1a1a1a">microSD</text>
+<text x="960" y="725" font-size="20" fill="#555">on-device CSV walk logs</text>
+
+<rect x="940" y="990" width="680" height="110" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/>
+<text x="960" y="1025" font-size="22" font-weight="bold" fill="#1a1a1a">battery sled (NP-style)</text>
+<text x="960" y="1055" font-size="20" fill="#555">field-portable: walk tests without the bench</text>
+
+<!-- patch -->
+<rect x="1790" y="560" width="330" height="240" rx="14" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+<text x="1815" y="605" font-size="26" font-weight="bold" fill="#1a1a1a">DESIGN A / C</text>
+<text x="1815" y="643" font-size="20" fill="#555">custom 2.4GHz patch</text>
+<text x="1815" y="671" font-size="20" fill="#555">antenna PCB (self-</text>
+<text x="1815" y="699" font-size="20" fill="#555">etched, ~$0.90)</text>
+<text x="1815" y="737" font-size="19" fill="#555">CERN-OHL-S hardware</text>
+<text x="1815" y="765" font-size="19" fill="#555">RG316 MMCX-RA pigtail</text>
+<line x1="1645" y1="712" x2="1790" y2="680" stroke="#7B1FA2" stroke-width="5"/>
+
+<!-- AP -->
+<rect x="1790" y="930" width="330" height="150" rx="14" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+<text x="1815" y="975" font-size="24" font-weight="bold" fill="#1a1a1a">2.4GHz AP</text>
+<text x="1815" y="1010" font-size="20" fill="#555">channel-locked router:</text>
+<text x="1815" y="1038" font-size="20" fill="#555">the signal being measured</text>
+<path d="M 1460 755 C 1500 880, 1650 960, 1790 990" fill="none" stroke="#888" stroke-width="4" stroke-dasharray="4 9"/>
+<path d="M 1955 800 L 1955 930" fill="none" stroke="#888" stroke-width="4" stroke-dasharray="4 9"/>
+<text x="1470" y="878" font-size="19" fill="#888">over-the-air RSSI</text>
+
+<!-- legend -->
+<text x="100" y="1000" font-size="24" font-weight="bold" fill="#1a1a1a">LEGEND</text>
+<line x1="100" y1="1035" x2="170" y2="1035" stroke="#1565C0" stroke-width="6"/>
+<text x="185" y="1043" font-size="21" fill="#333">data (USB serial / SDIO)</text>
+<line x1="100" y1="1075" x2="170" y2="1075" stroke="#7B1FA2" stroke-width="6"/>
+<text x="185" y="1083" font-size="21" fill="#333">RF path</text>
+<line x1="100" y1="1115" x2="170" y2="1115" stroke="#2E7D32" stroke-width="5" stroke-dasharray="10 7"/>
+<text x="185" y="1123" font-size="21" fill="#333">I2C control</text>
+<line x1="100" y1="1155" x2="170" y2="1155" stroke="#888" stroke-width="4" stroke-dasharray="4 9"/>
+<text x="185" y="1163" font-size="21" fill="#333">2.4GHz over the air</text>
+
+<text x="1100" y="1420" font-size="22" fill="#888" text-anchor="middle">github.com/Matthewjg95/project-platypus-antenna-lab</text>
+</svg>
