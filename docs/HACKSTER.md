@@ -410,7 +410,10 @@ so dropping the real parser in is an isolated change.
 
 ## Building it yourself
 
-See [the README](../README.md) for the full instructions. Short version:
+The whole chain is reproducible from public repos — software, firmware, and
+antenna.
+
+**The app** (runs with nothing attached — it starts in synthetic mode):
 
 ```bash
 winget install --id EclipseAdoptium.Temurin.26.JDK --version 26.0.2.10 --exact
@@ -420,7 +423,20 @@ winget install --id EclipseAdoptium.Temurin.26.JDK --version 26.0.2.10 --exact
 ./gradlew :app:run
 ```
 
-The app starts in synthetic mode, so it runs with no board attached.
+**The instrument**: flash
+[Tab5-Antenna-Scope](https://github.com/Matthewjg95/Tab5-Antenna-Scope) onto an
+M5Stack Tab5 with PlatformIO (`pio run -e tab5 -t upload`). It boots straight
+into the antenna bench; plug in USB and the app finds it by its log signature
+within a second or two. No COM port menus, no pairing.
+
+**The antenna** is optional — the instrument A/Bs its own chip antenna against
+whatever is on the MMCX port. To build the one this project measures, the
+patch PCB is open hardware:
+[project-platypus-patch-antenna](https://github.com/Matthewjg95/project-platypus-patch-antenna)
+(KiCad, CERN-OHL-S), etchable at home for under a dollar of FR-4.
+
+See [the README](../README.md) for packaging (a self-contained zip with its
+own JDK 26 runtime — the recipient needs no Java at all).
 
 ---
 
@@ -460,9 +476,9 @@ The app starts in synthetic mode, so it runs with no board attached.
 - **[The patch antenna](https://github.com/Matthewjg95/project-platypus-patch-antenna)** —
   KiCad sources for the Rev 7.13.1 panel, three matching designs on one board,
   CERN-OHL-S.
-- **Firmware** — the Tab5's applet firmware (3D viewer, room scanner, antenna
-  bench) lives in its own repo; the antenna applet's serial protocol is what
-  this app speaks.
+- **[Tab5-Antenna-Scope](https://github.com/Matthewjg95/Tab5-Antenna-Scope)** —
+  the instrument firmware: the antenna bench as a single-applet build that
+  boots straight into the scope. Its serial protocol is what this app speaks.
 - Built with **Temurin JDK 26**, **JavaFX 26**, **jSerialComm**, and one
   hand-written JSON codec. Total runtime dependency count: one.
 
