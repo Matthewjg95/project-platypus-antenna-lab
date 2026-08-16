@@ -1,0 +1,73 @@
+# Antenna Lab build log — captured 2026-08-16T01:00:53Z
+# Requirement evidence: explicit Java 26 targeting, successful compile + tests.
+
+$ ./gradlew --version
+
+------------------------------------------------------------
+Gradle 9.6.1
+------------------------------------------------------------
+
+Build time:    2026-06-26 14:25:50 UTC
+Revision:      309d128bd9fe8c0b71311878fc660b9cbaa07c51
+
+Kotlin:        2.3.21
+Groovy:        4.0.32
+Ant:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026
+Launcher JVM:  26.0.2 (Eclipse Adoptium 26.0.2+10)
+Daemon JVM:    C:\Program Files\Eclipse Adoptium\jdk-26.0.2.10-hotspot (no Daemon JVM specified, using current Java home)
+OS:            Windows 10 10.0 amd64
+
+
+$ ./gradlew toolchainInfo
+
+> Task :toolchainInfo
+Toolchain vendor   : Eclipse Temurin
+Toolchain version  : 26.0.2+10
+Toolchain home     : C:\Program Files\Eclipse Adoptium\jdk-26.0.2.10-hotspot
+Gradle             : 9.6.1
+
+BUILD SUCCESSFUL in 1s
+1 actionable task: 1 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.6.1/userguide/configuration_cache_enabling.html
+
+$ ./gradlew clean build
+ReconnectingProducerTest > a device that never returns eventually fails rather than retrying forever PASSED
+ReconnectingProducerTest > a board in a boot loop exhausts its retries instead of flapping forever PASSED
+ReconnectingProducerTest > the retry budget is per outage, not per capture PASSED
+ReconnectingProducerTest > sequence numbers stay unique and monotonic across a reconnect PASSED
+ReconnectingProducerTest > samples captured before a drop are not lost PASSED
+RollingBufferTest > clear resets both contents and counters PASSED
+RollingBufferTest > concurrent writes and snapshots do not corrupt the window PASSED
+RollingBufferTest > wrapping many times over keeps the window correct PASSED
+RollingBufferTest > once full the buffer evicts oldest-first and stays in order PASSED
+RollingBufferTest > an unfilled buffer reports only what it holds, oldest first PASSED
+RollingBufferTest > snapshot is a copy, so the caller can iterate while the producer writes PASSED
+SessionStoreTest > a captured run round-trips through disk with every sample intact PASSED
+SessionStoreTest > an unknown source kind names the problem instead of losing provenance PASSED
+SessionStoreTest > a synthetic session reloads still flagged as not measured PASSED
+SessionStoreTest > listing returns saved ids, and delete removes one PASSED
+SessionStoreTest > a newer schema version is refused rather than misread PASSED
+SessionStoreTest > samples are stored compactly, but source and metadata stay readable PASSED
+SessionStoreTest > run ids that would escape the store directory are refused PASSED
+SessionStoreTest > a missing run id returns empty rather than throwing PASSED
+Tab5LogParserTest > CRLF, LF and lone-CR line endings all terminate lines PASSED
+Tab5LogParserTest > switch transitions parse, and both line variants from the capture are covered PASSED
+Tab5LogParserTest > chunked delivery: readings are identical regardless of how reads split lines PASSED
+Tab5LogParserTest > values and order survive: first is INT -35, the EXT -50 outlier is kept PASSED
+Tab5LogParserTest > the real capture yields exactly 19 chip and 19 external readings PASSED
+Tab5LogParserTest > boot banner, heartbeats and touch chatter produce zero readings PASSED
+TraceStatsTest > computing from samples reads the rssiDbm field PASSED
+TraceStatsTest > p95 interpolates between ranks rather than snapping to one PASSED
+TraceStatsTest > unsorted input is handled -- percentiles sort internally PASSED
+TraceStatsTest > median of an even-length series is the midpoint of the two centre values PASSED
+TraceStatsTest > mean, median, min and max over a known series PASSED
+TraceStatsTest > a single sample has zero spread, not NaN PASSED
+TraceStatsTest > standard deviation uses Bessel's correction (n-1), not n PASSED
+TraceStatsTest > an empty trace throws rather than reporting zeros PASSED
+TraceStatsTest > precision holds for realistic RSSI values far from zero PASSED
+> Task :core:check
+> Task :core:build
+[Incubating] Problems report is available at: file:///C:/Users/matth/JavaInTheWildAntennaExtension/antenna-lab/build/reports/problems/problems-report.html
+BUILD SUCCESSFUL in 28s
+17 actionable tasks: 17 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.6.1/userguide/configuration_cache_enabling.html
