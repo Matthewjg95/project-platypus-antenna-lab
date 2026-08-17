@@ -3,9 +3,8 @@
 > **Contest:** Hackster.io "Modern Java in the Wild" · **Category:** BYOD Integration
 > **Deadline:** 16 August 2026, 11:59 p.m. PT
 >
-> **Draft status.** This document is written as features land, not at the end.
-> Sections marked <!-- TODO --> need facts only the bench can supply.
-> Last updated: 6 August 2026 (day 1).
+> **Submitted 16 August 2026.** Written as features landed, not at the end —
+> the commit history is the proof. Demo: https://youtu.be/KvSZsNSVwJY
 
 ---
 
