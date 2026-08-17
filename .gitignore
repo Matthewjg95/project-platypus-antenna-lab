@@ -24,3 +24,6 @@ Desktop.ini
 # Real captures used by parser tests DO belong in core/src/test/resources/captures.
 /captures-scratch/
 *.local.csv
+
+# Raw footage and cut videos: too heavy for git, ship via YouTube/release assets
+docs/videos/

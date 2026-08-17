@@ -10,15 +10,18 @@
 
 `[VIDEO: 110-second demo]`
 
-## My first measurement was wrong, and this is the tool that caught it
+## Changing the paradigm on hobby antenna testing
 
-I etched a 2.4 GHz patch antenna on a scrap of FR-4 and measured it against
-my dev board's chip antenna. The first result said **+12.5 dB**. Spectacular
-— and wrong. It never survived a controlled retest.
+I etched a 2.4 GHz patch antenna on a scrap of FR-4. Then came the question
+every antenna builder faces: *is it actually any good?* The hobby answer is
+guesswork — hold it up, squint at the signal bars, move two feet, convince
+yourself. I wanted the answer a lab would give: repeated measurements under a
+stated procedure, statistics with error bars, and a record I could stand
+behind.
 
-That failure is this project. **Antenna Lab** is a Java 26 desktop app that
-turns an M5Stack Tab5 into an automated antenna test bench — and its defining
-feature is that it refuses to tell you what you want to hear.
+**Antenna Lab** is that bench: a Java 26 desktop app that turns an M5Stack
+Tab5 into an automated antenna test instrument — and its defining feature is
+that it refuses to overstate what the data shows.
 
 `[IMG: bench photo — patch antenna, Tab5, laptop, both scopes live]`
 
@@ -116,5 +119,4 @@ test benches is two commands nobody wired up.
 
 ---
 
-*It measured my antenna, told me it was worse, and saved the receipts. That's
-the tool I wish I'd had before I believed my first measurement.*
+*Real measurements. Honest conclusions. Built from things you already own.*
