@@ -8,7 +8,7 @@
 
 ---
 
-`[VIDEO: 110-second demo]`
+`[VIDEO: https://youtu.be/KvSZsNSVwJY]`
 
 ## Changing the paradigm on hobby antenna testing
 

@@ -482,5 +482,5 @@ own JDK 26 runtime — the recipient needs no Java at all).
 - Built with **Temurin JDK 26**, **JavaFX 26**, **jSerialComm**, and one
   hand-written JSON codec. Total runtime dependency count: one.
 
-<!-- TODO: add the demo video link before submission. -->
+- **[Demo video](https://youtu.be/KvSZsNSVwJY)** — 94 seconds, the bench collecting evidence.
 
