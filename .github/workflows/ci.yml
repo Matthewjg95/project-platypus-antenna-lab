@@ -16,10 +16,12 @@
 
 name: CI
 
+# Tag pushes are deliberately absent: release.yml owns v* tags, and its job is
+# a strict superset of the Windows job here (build + test + package), so running
+# both would just bill the same work twice.
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:

@@ -1,0 +1,101 @@
+# Antenna Lab release packaging.
+#
+# Fires on version tags (v*) and publishes a GitHub Release carrying the two
+# distributables the build already knows how to make:
+#
+#   AntennaLab-<version>-windows-x64.zip   from :app:packageZip -- the
+#       self-contained app image. No WiX, no admin rights, and no SmartScreen
+#       unknown-publisher prompt on the way in. The recommended download.
+#   Antenna Lab-<version>.msi              from :app:packageInstaller -- the
+#       real installer, for people who want a Start-menu entry, a desktop
+#       shortcut and an uninstaller.
+#
+# Both bundle the Temurin 26 runtime. That is not optional: the class files are
+# compiled with --enable-preview, which locks them to the exact JDK that
+# produced them, and shipping the runtime is what hides that from users.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: package + publish (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Never ship a tag that does not pass its own tests.
+      - name: Build and test
+        run: ./gradlew build --no-daemon
+
+      # jpackage --type msi shells out to WiX 3.x (candle.exe / light.exe found
+      # via PATH). The windows-2022 image had WiX 3.14 preinstalled; newer
+      # images dropped it. Check rather than assume either way, and install
+      # through Chocolatey when it is missing. choco edits the machine PATH,
+      # which steps already running never see, so the bin directory goes into
+      # GITHUB_PATH explicitly.
+      - name: Ensure WiX Toolset 3.x
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if ($candle) {
+            Write-Host "WiX already on PATH: $($candle.Source)"
+            exit 0
+          }
+          choco install wixtoolset -y --no-progress
+          $bin = Get-Item "${env:ProgramFiles(x86)}\WiX Toolset v3*\bin" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if (-not $bin) {
+            Write-Error "WiX installed but no 'WiX Toolset v3*\bin' directory was found"
+            exit 1
+          }
+          Add-Content $env:GITHUB_PATH $bin.FullName
+          Write-Host "Added to PATH: $($bin.FullName)"
+
+      # Zip first, installer second -- the order is load-bearing. packageImage
+      # and packageInstaller both clear dist/ of the previous app image AND any
+      # *.msi / *.exe before running, so an .msi built first would be deleted
+      # when the zip's app image rebuilds. This order leaves both artifacts
+      # standing, and separate Gradle invocations pin it down -- inside one
+      # invocation Gradle owns the schedule.
+      - name: Package zip (app image)
+        run: ./gradlew :app:packageZip --no-daemon
+
+      - name: Package installer (.msi)
+        run: ./gradlew :app:packageInstaller --no-daemon
+
+      # jpackage has "succeeded" without producing output before (see ci.yml's
+      # launcher check). Fail here, with a readable message, rather than
+      # publishing a release with half its assets.
+      - name: Check both artifacts exist
+        shell: bash
+        run: |
+          shopt -s nullglob
+          zips=(app/build/dist/AntennaLab-*-windows-x64.zip)
+          msis=(app/build/dist/*.msi)
+          [ ${#zips[@]} -eq 1 ] || { echo "::error::expected exactly one zip in app/build/dist, found ${#zips[@]}"; exit 1; }
+          [ ${#msis[@]} -eq 1 ] || { echo "::error::expected exactly one .msi in app/build/dist, found ${#msis[@]}"; exit 1; }
+          ls -lh "${zips[0]}" "${msis[0]}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            app/build/dist/AntennaLab-*-windows-x64.zip
+            app/build/dist/*.msi
