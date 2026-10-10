@@ -50,9 +50,14 @@ public final class PlatypusCatalog {
     /** Edge-launch RF jack fitted to all three designs (Cinch/Johnson). */
     public static final String CONNECTOR = "MMCX 135-3711-801";
 
-    /** Substrate shared by all three designs, from the README design math. */
+    /**
+     * Substrate shared by all three designs. Dielectric values are from the README
+     * design math; finish, copper weight and TG are from the JLCPCB order as placed.
+     * The KiCad README says ENIG, but the boards were ordered leaded HASL.
+     */
     public static final String SUBSTRATE =
-            "FR4, h=1.6mm, er=4.4, tan d~0.02, 2-layer, ENIG, purple mask";
+            "FR4 TG135, h=1.6mm, er=4.4, tan d~0.02, 2-layer, 1oz outer copper, "
+                    + "leaded HASL, purple mask";
 
     /** Patch geometry shared by all three designs: W and L from the cavity model. */
     public static final String PATCH_GEOMETRY =
